@@ -10,3 +10,6 @@ export type PluginState = {
 export const pluginRefreshCounterState = atom<number>(0);
 
 export const pluginsState = atom<PluginState[]>([]);
+
+// True when the node registry is ready (plugins + remote specs registered)
+export const registryReadyState = atom<boolean>(false);

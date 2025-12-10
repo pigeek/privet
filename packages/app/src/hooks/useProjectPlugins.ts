@@ -1,24 +1,28 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { projectPluginsState } from '../state/savedGraphs';
 import { globalRivetNodeRegistry, resetGlobalRivetNodeRegistry, plugins as rivetPlugins } from '@ironclad/rivet-core';
-import { pluginRefreshCounterState, pluginsState } from '../state/plugins';
+import { pluginRefreshCounterState, pluginsState, registryReadyState } from '../state/plugins';
 import { produce } from 'immer';
 import { match } from 'ts-pattern';
 import { isNotNull } from '../utils/genericUtilFunctions';
 import { getError } from '../utils/errors';
 import * as Rivet from '@ironclad/rivet-core';
 import { useLoadPackagePlugin } from './useLoadPackagePlugin';
+import { loadAndRegisterRemoteNodes } from '../utils/registerRemoteNodes';
 import useAsyncEffect from 'use-async-effect';
 
 export function useProjectPlugins() {
   const pluginSpecs = useAtomValue(projectPluginsState);
   const [plugins, setPlugins] = useAtom(pluginsState);
   const setPluginRefreshCounter = useSetAtom(pluginRefreshCounterState);
+  const setRegistryReady = useSetAtom(registryReadyState);
   const { loadPackagePlugin } = useLoadPackagePlugin({
     onLog: (message) => console.log(message),
   });
 
   useAsyncEffect(async () => {
+    // Mark registry not ready during reload
+    setRegistryReady(false);
     resetGlobalRivetNodeRegistry();
 
     setPlugins(pluginSpecs.map((spec) => ({ id: spec.id, spec, loaded: false })));
@@ -81,6 +85,10 @@ export function useProjectPlugins() {
       console.log(`Loaded plugin: ${plugin.id}`);
     }
 
+    // After resetting the registry and loading plugins, also register remote node specs
+    await loadAndRegisterRemoteNodes();
+
     setPluginRefreshCounter((oldValue) => oldValue + 1);
+    setRegistryReady(true);
   }, [pluginSpecs]);
 }

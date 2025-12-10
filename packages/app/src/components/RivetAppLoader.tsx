@@ -3,8 +3,10 @@ import { allInitializeStoreFns } from '../state/storage';
 import useAsyncEffect from 'use-async-effect';
 import { RivetApp } from './RivetApp';
 
+
 export const RivetAppLoader = () => {
   const [isLoading, setIsLoading] = useState(true);
+  
 
   useAsyncEffect(async () => {
     for (const initializeFn of allInitializeStoreFns) {
@@ -13,6 +15,7 @@ export const RivetAppLoader = () => {
 
     setIsLoading(false);
   }, []);
+  // Note: registryReady is managed by useProjectPlugins; we avoid double-registering remote specs here.
 
   if (isLoading) {
     return <div>Loading...</div>;

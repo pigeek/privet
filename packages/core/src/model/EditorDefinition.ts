@@ -18,6 +18,12 @@ export type SharedEditorDefinitionProps<T extends ChartNode> = {
 
   autoFocus?: boolean;
 
+  // Declarative visibility condition; prefer over hideIf (which executes code)
+  showIf?: {
+    dataKey: keyof T['data'] & string;
+    equals?: unknown;
+  };
+
   hideIf?: (data: T['data']) => boolean;
 
   disableIf?: (data: T['data']) => boolean;

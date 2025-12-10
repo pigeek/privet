@@ -68,15 +68,15 @@ export const defaultEditorContainerStyles = css`
     align-items: center;
     gap: 8px;
 
-    label:first-child {
+    label:first-of-type {
       min-width: 75px;
     }
 
-    label:nth-child(2) {
+    label:nth-of-type(2) {
       min-width: 32px;
     }
 
-    &.use-input-toggle label:first-child {
+    &.use-input-toggle label:first-of-type {
       min-width: unset;
     }
 
@@ -130,13 +130,29 @@ export const DefaultNodeEditor: FC<
     })();
   }, [node, getUIContext]);
 
+  const isVisible = (editor: EditorDefinition<ChartNode>) => {
+    const cond = (editor as any).showIf as { dataKey: string; equals?: unknown } | undefined;
+    if (!cond) return true;
+    const value = (node as any).data?.[cond.dataKey];
+    if (cond.equals !== undefined) return value === cond.equals;
+    return !!value;
+  };
+
+  const visibleEditors = editors
+    .map((e) => (e.type === 'group' ? { ...e, editors: e.editors.filter(isVisible) } : e))
+    .filter((e) => (e.type === 'group' ? e.editors.length > 0 : isVisible(e)));
+
   return (
     <div css={defaultEditorContainerStyles}>
-      {editors.map((editor, i) => {
+      {visibleEditors.map((editor, i) => {
         const isDisabled = editor.disableIf?.(node.data) ?? false;
+        const key =
+          editor.type === 'group'
+            ? `group:${editor.label ?? i}`
+            : (editor as any).dataKey ?? (editor as any).customEditorId ?? `${editor.type}:${i}`;
         return (
           <DefaultNodeEditorField
-            key={editor.type === 'group' ? editor.label : editor.dataKey}
+            key={key}
             node={node}
             onChange={onChange}
             editor={editor}

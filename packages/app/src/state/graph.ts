@@ -8,6 +8,7 @@ import {
   type NodeImpl,
   type NodeInputDefinition,
   type NodeOutputDefinition,
+  type PortId,
   emptyNodeGraph,
   getError,
   globalRivetNodeRegistry,
@@ -133,6 +134,73 @@ export const ioDefinitionsState = atom((get) => {
         project,
         referencedProjects,
       );
+
+      // Apply declarative filters and expand variadic inputs
+      if (inputDefinitions) {
+        const expanded: NodeInputDefinition[] = [];
+        for (const def of inputDefinitions) {
+          // Apply showIf condition, if present
+          const show = (() => {
+            if (!('showIf' in def) || !def.showIf) return true;
+            const cond = def.showIf as any;
+            const data: any = (nodesById[node.id] as any)?.data ?? {};
+            const value = data?.[cond.dataKey];
+            if ('equals' in cond && cond.equals !== undefined) {
+              return value === cond.equals;
+            }
+            return !!value;
+          })();
+
+          if (!show) continue;
+
+          // Expand variadic input group, if specified
+          const variadic = (def as any).variadic as
+            | { baseId: string; titlePattern?: string; startAt?: number; min?: number; max?: number }
+            | undefined;
+          if (variadic) {
+            const baseId = variadic.baseId;
+            const startAt = variadic.startAt ?? 1;
+            const min = variadic.min ?? 1;
+            const max = variadic.max;
+
+            // Find highest connected index for this baseId
+            let maxIndex = startAt - 1;
+            for (const c of connections ?? []) {
+              if (c.inputNodeId !== node.id) continue;
+              const inputId = String(c.inputId);
+              if (inputId.startsWith(baseId)) {
+                const suffix = inputId.slice(baseId.length);
+                const n = parseInt(suffix, 10);
+                if (!Number.isNaN(n)) {
+                  maxIndex = Math.max(maxIndex, n);
+                }
+              }
+            }
+
+            let count = Math.max(min, (maxIndex >= startAt ? maxIndex : startAt - 1) + 1);
+            if (typeof max === 'number') count = Math.min(count, max);
+
+            for (let i = startAt; i < startAt + count; i++) {
+              const id = `${baseId}${i}` as PortId;
+              const titleTemplate = variadic.titlePattern ?? `${def.title} {n}`;
+              const title = String(titleTemplate).replace('{n}', String(i));
+              expanded.push({
+                id,
+                title,
+                dataType: def.dataType,
+                required: def.required,
+                data: def.data,
+                defaultValue: def.defaultValue,
+                description: def.description,
+                coerced: def.coerced,
+              });
+            }
+          } else {
+            expanded.push(def);
+          }
+        }
+        inputDefinitions = expanded;
+      }
     } catch (err) {
       const error = getError(err);
       console.error('Error getting node input definitions', error);

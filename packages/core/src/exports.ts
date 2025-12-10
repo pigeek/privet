@@ -6,6 +6,8 @@ export * from './model/NodeGraph.js';
 export * from './model/NodeImpl.js';
 export * from './model/NodeDefinition.js';
 export * from './model/Nodes.js';
+export * from './model/registerSpecs.js';
+export * from './model/remoteSpecs.js';
 export * from './model/Project.js';
 export * from './native/BaseDir.js';
 export * from './native/NativeApi.js';

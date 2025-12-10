@@ -92,6 +92,73 @@ export type NodeTest = {
 };
 
 /** Represents an input definition of a node. */
+export type ShowIfCondition = {
+  /** Data key on the node's data to check for visibility. */
+  dataKey: string;
+  /** Optional value to equal; if omitted, truthy check is used. */
+  equals?: unknown;
+  /** Optional not equals check. */
+  notEquals?: unknown;
+  /** Value must be one of these. */
+  in?: unknown[];
+  /** Value must not be one of these. */
+  notIn?: unknown[];
+};
+
+export type VisibilityCondition =
+  | ShowIfCondition
+  | { all: VisibilityCondition[] }
+  | { any: VisibilityCondition[] };
+
+export type VariadicInputDescriptor = {
+  /** Base id prefix for generated port ids, e.g. `input` for ids like `input1`, `input2`, ... */
+  baseId: string;
+  /** Title pattern with `{n}` placeholder, e.g. `Input {n}` */
+  titlePattern?: string;
+  /** Starting index for `{n}`. Defaults to 1. */
+  startAt?: number;
+  /** Minimum number of visible inputs. Defaults to 1. */
+  min?: number;
+  /** Optional maximum number of visible inputs. */
+  max?: number;
+};
+
+// Variadic outputs can be generated based on schema-driven strategies
+export type VariadicOutputDescriptor =
+  | ({
+      /** Base id prefix for generated port ids, e.g. `output` for ids like `output1`, `output2`, ... */
+      baseId: string;
+      /** Title pattern with `{n}` placeholder, e.g. `Output {n}` */
+      titlePattern?: string;
+      /** Starting index for `{n}`. Defaults to 1. */
+      startAt?: number;
+    } & (
+      | {
+          /** Generate one output per capture group of a regex defined on node data. */
+          type: 'regex';
+          /** Data key containing the regex pattern string. */
+          regexDataKey: string;
+          /** Optional data key; if truthy, adds 'm' to flags. Always includes 'g'. */
+          multilineDataKey?: string;
+        }
+      | {
+          /** Mirror a variadic input group count into outputs. */
+          type: 'mirror';
+          /** Variadic input base id to mirror, e.g., 'input' */
+          inputBaseId: string;
+          /** If true, generate one fewer output than inputs (e.g., Passthrough/Delay). */
+          excludeLast?: boolean;
+        }
+      | {
+          /** Generate outputs from a data list on the node. */
+          type: 'dataList';
+          /** Data key of array to iterate. */
+          dataKey: string;
+          /** Optional title template; supports {{item}} substitution. */
+          titleTemplate?: string;
+        }
+    ));
+
 export type NodeInputDefinition = {
   /** The unique identifier of the input. Unique within a single node only. */
   id: PortId;
@@ -116,6 +183,18 @@ export type NodeInputDefinition = {
 
   /** Will the input value attempt to be coerced into the desired type? */
   coerced?: boolean;
+
+  /** Declarative visibility condition. */
+  showIf?: VisibilityCondition;
+
+  /** Dynamic data type sourced from node data. */
+  dataTypeFrom?: { dataKey: string; map?: Record<string, DataType | Readonly<DataType[]>> };
+
+  /** Optional dynamic title template sourced from node data (UI only). */
+  titleTemplate?: string;
+
+  /** If set, this input definition is treated as a variadic group. */
+  variadic?: VariadicInputDescriptor;
 };
 
 /** Represents an output definition of a node. */
@@ -137,6 +216,19 @@ export type NodeOutputDefinition = {
 
   /** User-facing description of the port. */
   description?: string;
+
+  /** Declarative visibility condition. */
+  showIf?: VisibilityCondition;
+
+  /** Dynamic data type sourced from node data. */
+  dataTypeFrom?: { dataKey: string; map?: Record<string, DataType | Readonly<DataType[]>> };
+
+  /** Optional dynamic title template sourced from node data (UI only). */
+  titleTemplate?: string;
+
+  /** If set, this output definition is treated as a variadic group. */
+  // Note: Only schema metadata; AbstractNode expands this at runtime for rendering
+  variadic?: VariadicOutputDescriptor;
 };
 
 /** Represents a connection between two nodes. */

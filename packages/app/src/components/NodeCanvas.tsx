@@ -60,6 +60,8 @@ import { zoomSensitivityState } from '../state/settings';
 import { MouseIcon } from './MouseIcon';
 import { PortInfo } from './PortInfo';
 import { useNodeTypes } from '../hooks/useNodeTypes';
+import { registryReadyState } from '../state/plugins';
+import { LoadingSpinner } from './LoadingSpinner';
 import { lastRunDataByNodeState, selectedProcessPageNodesState } from '../state/dataFlow';
 import { useDeleteNodesCommand } from '../commands/deleteNodeCommand';
 import { useEditNodeCommand } from '../commands/editNodeCommand';
@@ -261,6 +263,7 @@ export const NodeCanvas: FC<NodeCanvasProps> = ({
       return { node, nodeConnections };
     });
   }, [connections, nodes]);
+  const registryReady = useAtomValue(registryReadyState);
 
   const draggingNodeConnections = useMemo(() => {
     return draggingNodes.flatMap((draggingNode) =>
@@ -730,7 +733,12 @@ export const NodeCanvas: FC<NodeCanvasProps> = ({
           }}
         >
           <div className="nodes">
-            {nodesWithConnections.map(({ node, nodeConnections }) => {
+            {!registryReady ? (
+              <div style={{ padding: 16, color: 'var(--textSecondary)' }}>
+                <LoadingSpinner />
+              </div>
+            ) : (
+              nodesWithConnections.map(({ node, nodeConnections }) => {
               if (!shouldShowNodeBasedOnPosition.get(node)) {
                 return null;
               }
@@ -766,7 +774,8 @@ export const NodeCanvas: FC<NodeCanvasProps> = ({
                   onResizeFinish={onResizeFinish}
                 />
               );
-            })}
+            })
+            )}
           </div>
           <DragOverlay
             dropAnimation={null}

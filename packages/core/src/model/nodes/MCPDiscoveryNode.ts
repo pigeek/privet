@@ -22,7 +22,7 @@ type MCPDiscoveryNode = ChartNode<'mcpDiscovery', MCPDiscoveryNodeData>;
 
 export type MCPDiscoveryNodeData = MCPBaseNodeData & { useToolsOutput?: boolean; usePromptsOutput?: boolean };
 
-class MCPDiscoveryNodeImpl extends NodeImpl<MCPDiscoveryNode> {
+export class MCPDiscoveryNodeImpl extends NodeImpl<MCPDiscoveryNode> {
   static create(): MCPDiscoveryNode {
     const chartNode: MCPDiscoveryNode = {
       type: 'mcpDiscovery',

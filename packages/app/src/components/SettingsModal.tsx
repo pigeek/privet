@@ -13,6 +13,7 @@ import {
   themes,
   zoomSensitivityState,
 } from '../state/settings.js';
+import { debuggerDefaultUrlState } from '../state/settings';
 import Modal, { ModalTransition, ModalHeader, ModalTitle, ModalBody, ModalFooter } from '@atlaskit/modal-dialog';
 import TextField from '@atlaskit/textfield';
 import Button from '@atlaskit/button';
@@ -158,6 +159,7 @@ export const GeneralSettingsPage: FC = () => {
   const [previousDataPerNodeToKeep, setPreviousDataPerNodeToKeep] = useAtom(previousDataPerNodeToKeepState);
   const [zoomSensitivity, setZoomSensitivity] = useAtom(zoomSensitivityState);
   const [preservePortTextCase, setPreservePortTextCase] = useAtom(preservePortTextCaseState);
+  const [remoteDebuggerUrl, setRemoteDebuggerUrl] = useAtom(debuggerDefaultUrlState);
 
   return (
     <div css={fields}>
@@ -168,6 +170,20 @@ export const GeneralSettingsPage: FC = () => {
             onChange={(e) => e && setTheme(e.value as any)}
             options={themes}
           />
+        )}
+      </Field>
+      <Field name="remoteDebuggerUrl" label="Remote Debugger Server URL">
+        {() => (
+          <>
+            <TextField
+              value={remoteDebuggerUrl}
+              placeholder="ws://localhost:21888"
+              onChange={(e) => setRemoteDebuggerUrl((e.target as HTMLInputElement).value)}
+            />
+            <HelperMessage>
+              Rivet auto‑connects to this WebSocket on startup. Change to point at a different remote executor.
+            </HelperMessage>
+          </>
         )}
       </Field>
       <Field name="preserve-port-text-case" label="Preserve text case for node ports">

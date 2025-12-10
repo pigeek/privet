@@ -15,7 +15,7 @@ import ForwardCircleIcon from 'majesticons/line/forward-circle-line.svg?react';
 import CopyIcon from 'majesticons/line/clipboard-plus-line.svg?react';
 import { CopyAsTestCaseModal } from './CopyAsTestCaseModal';
 import { useToggle } from 'ahooks';
-import { executorOptions } from '../state/settings';
+import { executorOptions, debuggerDefaultUrlState } from '../state/settings';
 import QuestionIcon from 'majesticons/line/question-circle-line.svg?react';
 import { useSetAtom, useAtom } from 'jotai';
 import { swallowPromise, syncWrapper } from '../utils/syncWrapper';
@@ -106,7 +106,9 @@ export const ActionBarMoreMenu: FC<{
   };
 
   const { remoteDebuggerState: remoteDebugger } = useRemoteDebugger();
+  const [defaultDebuggerUrl] = useAtom(debuggerDefaultUrlState);
   const isActuallyRemoteDebugging = remoteDebugger.started && !remoteDebugger.isInternalExecutor;
+  const displayUrl = remoteDebugger.url || defaultDebuggerUrl || 'ws://localhost:21888';
 
   return (
     <div css={moreMenuStyles}>
@@ -116,25 +118,9 @@ export const ActionBarMoreMenu: FC<{
 
       <div className="menu-item executor">
         <label htmlFor="select-executor" className="executor-title">
-          <CpuIcon /> Executor:
+          <CpuIcon /> Remote Debugger:
         </label>
-        {isActuallyRemoteDebugging ? (
-          <span className="select-executor-remote">Remote</span>
-        ) : (
-          <Select
-            id="select-executor"
-            appearance="subtle"
-            options={executorOptions}
-            value={selectedExecutorOption}
-            onChange={(selected) => setSelectedExecutor(selected!.value)}
-            isSearchable={false}
-            isClearable={false}
-            menuPortalTarget={dropdownTarget.current}
-          />
-        )}
-      </div>
-      <div className="menu-item menu-item-button remote-debugger" onClick={openDebuggerPanel}>
-        <LinkIcon /> Remote Debugger
+        <span className="select-executor-remote">{displayUrl}</span>
       </div>
       <div className="menu-item menu-item-button load-recording" onClick={doLoadRecording}>
         <ForwardCircleIcon /> Load Recording

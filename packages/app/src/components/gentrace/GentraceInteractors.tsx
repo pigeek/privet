@@ -61,21 +61,19 @@ export const GentraceInteractors = () => {
           project,
           graph,
           async (inputs) => {
-            if (remoteDebugger.remoteDebuggerState.remoteUploadAllowed) {
-              remoteDebugger.send('set-dynamic-data', {
-                project: {
-                  ...project,
-                  graphs: {
-                    ...project.graphs,
-                    [graph.metadata!.id!]: graph,
-                  },
+            remoteDebugger.send('set-dynamic-data', {
+              project: {
+                ...project,
+                graphs: {
+                  ...project.graphs,
+                  [graph.metadata!.id!]: graph,
                 },
-                settings: await fillMissingSettingsFromEnvironmentVariables(
-                  savedSettings,
-                  globalRivetNodeRegistry.getPlugins(),
-                ),
-              });
-            }
+              },
+              settings: await fillMissingSettingsFromEnvironmentVariables(
+                savedSettings,
+                globalRivetNodeRegistry.getPlugins(),
+              ),
+            });
 
             const recorder = new ExecutionRecorder();
 

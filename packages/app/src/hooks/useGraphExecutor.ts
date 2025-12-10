@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
 import { useAtomValue } from 'jotai';
-import { selectedExecutorState } from '../state/execution';
 import { useExecutorSidecar } from './useExecutorSidecar';
-import { useLocalExecutor } from './useLocalExecutor';
 import { useRemoteExecutor } from './useRemoteExecutor';
+import { debuggerDefaultUrlState } from '../state/settings';
 
 /**
  * Caution: only use this hook on components that will not dismount. The `useEffect` cleanup function
@@ -13,26 +12,20 @@ import { useRemoteExecutor } from './useRemoteExecutor';
  * @returns
  */
 export function useGraphExecutor() {
-  const selectedExecutor = useAtomValue(selectedExecutorState);
-  const localExecutor = useLocalExecutor();
+  const defaultDebuggerUrl = useAtomValue(debuggerDefaultUrlState);
   const remoteExecutor = useRemoteExecutor();
 
-  useExecutorSidecar({ enabled: selectedExecutor === 'nodejs' });
+  // Always prefer remote executor and auto-connect to default debugger URL
+  useExecutorSidecar({ enabled: false });
 
-  const executor = remoteExecutor.active || selectedExecutor === 'nodejs' ? remoteExecutor : localExecutor;
+  const executor = remoteExecutor;
 
   useEffect(() => {
-    if (selectedExecutor === 'nodejs') {
-      remoteExecutor.remoteDebugger.connect('ws://localhost:21889/internal');
-    } else {
-      remoteExecutor.remoteDebugger.disconnect();
-    }
-
-    return () => {
-      remoteExecutor.remoteDebugger.disconnect();
-    };
+    // Connect to configured remote debugger URL (falls back internally if blank)
+    remoteExecutor.remoteDebugger.connect(defaultDebuggerUrl);
+    // Do not auto-disconnect; keep persistent remote debugging
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedExecutor]);
+  }, [defaultDebuggerUrl]);
 
   return {
     tryRunGraph: executor.tryRunGraph,

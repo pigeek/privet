@@ -163,17 +163,7 @@ export const ActionBar: FC<ActionBarProps> = ({ onRunGraph, onAbortGraph, onPaus
 
   return (
     <div css={styles}>
-      {(isActuallyRemoteDebugging || (!remoteDebugger.isInternalExecutor && remoteDebugger.reconnecting)) && (
-        <div
-          className={clsx('remote-debugger-button active', {
-            reconnecting: remoteDebugger.reconnecting,
-          })}
-        >
-          <button onClick={() => disconnect()}>
-            {remoteDebugger.reconnecting ? 'Remote Debugger (Reconnecting...)' : 'Disconnect Remote Debugger'}
-          </button>
-        </div>
-      )}
+      {/* Remote debugger is always enabled by default; hide disconnect control */}
 
       {loadedRecording && (
         <div className={clsx('unload-recording-button')}>

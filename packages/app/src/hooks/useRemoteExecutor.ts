@@ -149,24 +149,23 @@ export function useRemoteExecutor() {
     const graphToRun = options.graphId ?? graph.metadata!.id!;
 
     try {
-      if (remoteDebugger.remoteDebuggerState.remoteUploadAllowed) {
-        remoteDebugger.send('set-dynamic-data', {
-          project: {
-            ...project,
-            graphs: {
-              ...project.graphs,
-              [graph.metadata!.id!]: graph,
-            },
+      // Always upload current project/graph and static data to remote executor
+      remoteDebugger.send('set-dynamic-data', {
+        project: {
+          ...project,
+          graphs: {
+            ...project.graphs,
+            [graph.metadata!.id!]: graph,
           },
-          settings: await fillMissingSettingsFromEnvironmentVariables(
-            savedSettings,
-            globalRivetNodeRegistry.getPlugins(),
-          ),
-        });
+        },
+        settings: await fillMissingSettingsFromEnvironmentVariables(
+          savedSettings,
+          globalRivetNodeRegistry.getPlugins(),
+        ),
+      });
 
-        for (const [id, dataValue] of entries(projectData)) {
-          remoteDebugger.sendRaw(`set-static-data:${id}:${dataValue}`);
-        }
+      for (const [id, dataValue] of entries(projectData)) {
+        remoteDebugger.sendRaw(`set-static-data:${id}:${dataValue}`);
       }
 
       const contextValues = entries(projectContext).reduce(
@@ -234,21 +233,20 @@ export function useRemoteExecutor() {
             }));
           },
           runGraph: async (project, graphId, inputs) => {
-            if (remoteDebugger.remoteDebuggerState.remoteUploadAllowed) {
-              remoteDebugger.send('set-dynamic-data', {
-                project: {
-                  ...project,
-                  graphs: {
-                    ...project.graphs,
-                    [graph.metadata!.id!]: graph,
-                  },
+            // Always upload project/graph for tests
+            remoteDebugger.send('set-dynamic-data', {
+              project: {
+                ...project,
+                graphs: {
+                  ...project.graphs,
+                  [graph.metadata!.id!]: graph,
                 },
-                settings: await fillMissingSettingsFromEnvironmentVariables(
-                  savedSettings,
-                  globalRivetNodeRegistry.getPlugins(),
-                ),
-              });
-            }
+              },
+              settings: await fillMissingSettingsFromEnvironmentVariables(
+                savedSettings,
+                globalRivetNodeRegistry.getPlugins(),
+              ),
+            });
 
             {
               let resolve: (value: GraphOutputs) => void;

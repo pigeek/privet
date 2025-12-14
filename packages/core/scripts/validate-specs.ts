@@ -8,6 +8,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { genericNodeDefinition, type GenericNodeSpec } from '../src/model/nodes/GenericNode.js';
+import type { EditorDefinition } from '../src/model/EditorDefinition.js';
 import { readdirSync } from 'node:fs';
 import type { ChartNode, NodeId, NodeInputDefinition, NodeOutputDefinition } from '../src/model/NodeBase.js';
 
@@ -130,9 +131,14 @@ async function compareOne(spec: GenericNodeSpec<any>) {
   const specImpl = new specImplClass(specNode);
   let specInputs: NodeInputDefinition[] = [];
   let specOutputs: NodeOutputDefinition[] = [];
+  let specEditors: EditorDefinition<any>[] = [];
   try {
     specInputs = specImpl.getInputDefinitions([], {} as any, {} as any, {} as any) as any;
     specOutputs = specImpl.getOutputDefinitions([], {} as any, {} as any, {} as any) as any;
+    const maybeSpecEditors = (specImpl as any).getEditors?.([], {} as any, {} as any, {} as any);
+    specEditors = (typeof (maybeSpecEditors as any)?.then === 'function'
+      ? await (maybeSpecEditors as Promise<EditorDefinition<any>[]>)
+      : ((maybeSpecEditors as any[]) ?? [])) as any;
   } catch (err) {
     return { type: typeName, error: `Spec getInput/Output failed: ${(err as Error).message}` } as const;
   }
@@ -160,14 +166,95 @@ async function compareOne(spec: GenericNodeSpec<any>) {
 
   const ok = missingInputs.length === 0 && missingOutputs.length === 0 && bodyIssues.length === 0;
 
+  // Compare editors (basic parity for type/label/dataKey/useInputToggleDataKey)
+  let editorsOk = true;
+  let editorsIssues: string[] = [];
+  try {
+    const maybeLegacyEditors = (legacyImpl as any).getEditors?.([], {} as any, {} as any, {} as any);
+    const legacyEditorsRaw = typeof (maybeLegacyEditors as any)?.then === 'function'
+      ? await (maybeLegacyEditors as Promise<EditorDefinition<any>[]>)
+      : (maybeLegacyEditors as any);
+    // Fallback to raw spec editors if AbstractNode returns none
+    const specEditorsRaw = (specEditors && (specEditors as any[]).length > 0
+      ? (specEditors as any)
+      : (((spec as any).editors as any[]) ?? [])) as any;
+
+    const flatten = (arr: any[]): any[] =>
+      arr.flatMap((e) => (e?.type === 'group' && Array.isArray(e?.editors) ? flatten(e.editors) : [e]));
+
+    const normalize = (value: any): any[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) return flatten(value);
+      // Some legacy impls might return a single editor or an object; ignore for now
+      return [];
+    };
+
+    const legacyEditorsAll = normalize(legacyEditorsRaw);
+    const legacyDefaultData = (legacyNode as any).data ?? {};
+    const legacyEditors = legacyEditorsAll.filter((e) => (typeof e?.hideIf === 'function' ? !e.hideIf(legacyDefaultData) : true));
+    const proj = (e: any) => ({
+      type: e?.type,
+      label: e?.label,
+      dataKey: e?.dataKey,
+      useInputToggleDataKey: e?.useInputToggleDataKey,
+    });
+    const L = legacyEditors.map(proj).sort((a, b) => `${a.type}:${a.dataKey}`.localeCompare(`${b.type}:${b.dataKey}`));
+
+    // Filter spec editors by showIf in default data where applicable (to align with legacy dynamic getEditors)
+    const defaultData = (spec as any).data ?? {};
+    const passesShowIf = (e: any): boolean => {
+      const s = e?.showIf;
+      if (!s) return true;
+      const evalCond = (cond: any): boolean => {
+        if (!cond) return true;
+        if (cond.all) return cond.all.every((c: any) => evalCond(c));
+        if (cond.any) return cond.any.some((c: any) => evalCond(c));
+        if (cond.dataKey) return defaultData[cond.dataKey] === cond.equals;
+        return true;
+      };
+      return evalCond(s);
+    };
+
+    const S = normalize(specEditorsRaw).filter(passesShowIf).map(proj);
+
+    // Order-independent comparison by dataKey
+    const lKeys = new Set(L.map((e) => e.dataKey));
+    const sKeys = new Set(S.map((e) => e.dataKey));
+    const missing = [...lKeys].filter((k) => !sKeys.has(k));
+    const extra = [...sKeys].filter((k) => !lKeys.has(k));
+    if (missing.length || extra.length) {
+      editorsOk = false;
+      if (missing.length) editorsIssues.push(`missing editors: ${missing.join(', ')}`);
+      if (extra.length) editorsIssues.push(`extra editors: ${extra.join(', ')}`);
+    }
+
+    const common = [...lKeys].filter((k) => sKeys.has(k));
+    for (const key of common) {
+      const a = L.find((e) => e.dataKey === key)!;
+      const b = S.find((e) => e.dataKey === key)!;
+      const diffs: string[] = [];
+      (['type', 'label', 'useInputToggleDataKey'] as const).forEach((k) => {
+        if ((a as any)[k] !== (b as any)[k]) diffs.push(`${k}: ${JSON.stringify((a as any)[k])} != ${JSON.stringify((b as any)[k])}`);
+      });
+      if (diffs.length) {
+        editorsOk = false;
+        editorsIssues.push(`editor '${key}' mismatches: ${diffs.join(', ')}`);
+      }
+    }
+  } catch (e) {
+    editorsOk = false;
+    editorsIssues.push(`editor comparison failed: ${(e as Error).message}`);
+  }
+
   return {
     type: typeName,
-    ok,
+    ok: ok && editorsOk,
     missingInputs,
     extraInputs,
     missingOutputs,
     extraOutputs,
     bodyIssues,
+    editorsIssues,
   } as const;
 }
 
@@ -197,6 +284,7 @@ async function main() {
     if (r.missingOutputs?.length) console.log(`  missing outputs: ${r.missingOutputs.join(', ')}`);
     if (r.extraOutputs?.length) console.log(`  extra outputs: ${r.extraOutputs.join(', ')}`);
     if (r.bodyIssues?.length) console.log(`  body issues: ${r.bodyIssues.join('; ')}`);
+    if (r.editorsIssues?.length) console.log(`  editors issues: ${r.editorsIssues.join('; ')}`);
   }
 }
 

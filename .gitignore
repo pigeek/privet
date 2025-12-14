@@ -50,3 +50,15 @@ __pycache__/
 .pytype/
 .ruff_cache/
 .ipynb_checkpoints/
+packages/privet/build/privet-executor/Analysis-00.toc
+packages/privet/build/privet-executor/base_library.zip
+packages/privet/build/privet-executor/EXE-00.toc
+packages/privet/build/privet-executor/PKG-00.toc
+packages/privet/build/privet-executor/privet-executor.pkg
+packages/privet/build/privet-executor/PYZ-00.pyz
+packages/privet/build/privet-executor/PYZ-00.toc
+packages/privet/build/privet-executor/Tree-00.toc
+packages/privet/build/privet-executor/Tree-01.toc
+packages/privet/build/privet-executor/Tree-02.toc
+packages/privet/build/privet-executor/warn-privet-executor.txt
+packages/privet/build/privet-executor/xref-privet-executor.html

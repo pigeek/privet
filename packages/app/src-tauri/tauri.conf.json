@@ -31,7 +31,7 @@
         "execute": true,
         "scope": [
           {
-            "name": "../../app-executor/dist/app-executor",
+  "../../privet/dist/privet-executor",
             "sidecar": true
           },
           {
@@ -72,7 +72,7 @@
       "deb": {
         "depends": []
       },
-      "externalBin": ["../../app-executor/dist/app-executor", "../sidecars/pnpm/pnpm"],
+      "externalBin": ["../privet/dist/privet-executor", "../sidecars/pnpm/pnpm"],
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
       "identifier": "com.ironcladapp.rivet",
       "longDescription": "",

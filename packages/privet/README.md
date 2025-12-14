@@ -17,7 +17,7 @@ Node discovery
 - At startup, the server enumerates `privet/nodes` and aggregates all `SPEC` values.
 
 Adding nodes
-- Add a file like `privet/nodes/MyNode.py` with a module-level `SPEC` variable.
+- Add a file like `privet/nodes/my_node.py` with a module-level `SPEC` variable.
 - Restart the backend (or rely on `--reload`).
 
 Notes

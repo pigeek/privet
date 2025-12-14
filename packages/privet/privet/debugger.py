@@ -1,12 +1,15 @@
 import asyncio
 import json
 import logging
+import tempfile
 from typing import Any, Dict
 
 import websockets
 from websockets.server import WebSocketServerProtocol
+from .graph.types import project_from_json
+from .graph.processor import GraphProcessor
 
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -26,10 +29,12 @@ class RemoteDebuggerServer:
         self.port = port
         self._server: websockets.server.Serve | None = None
         self._clients: set[WebSocketServerProtocol] = set()
+        self._processors: list[Any] = []
 
         # In-memory placeholders for uploaded project/static data
         self.dynamic_data: Dict[str, Any] = {}
         self.static_data: Dict[str, Any] = {}
+        self._last_project_dump_path: str | None = None
 
     async def _on_connect(self, websocket: WebSocketServerProtocol) -> None:
         self._clients.add(websocket)
@@ -63,30 +68,132 @@ class RemoteDebuggerServer:
 
         if msg_type == "set-dynamic-data":
             self.dynamic_data = data or {}
-            logger.debug("Dynamic data updated: keys=%s", list(self.dynamic_data.keys()))
+            settings = self.dynamic_data.get("settings") or {}
+            has_key = bool(settings.get("openAiKey"))
+            logger.info("Dynamic data updated: keys=%s settings.openAiKey=%s", list(self.dynamic_data.keys()), has_key)
+            # Best-effort dump of the incoming project for inspection
+            try:
+                await self._dump_project_to_temp(websocket)
+            except Exception as e:
+                logger.exception("Failed to write project dump: %s", e)
         elif msg_type == "preload":
             # Accept and ignore for now
             logger.debug("Preload received: %s", list((data or {}).keys()))
         elif msg_type == "user-input":
+            try:
+                print(f"[RemoteDebugger] user-input received: {data}")
+            except Exception:
+                pass
+            node_id = (data or {}).get("nodeId")
+            answers = (data or {}).get("answers")
+            logger.info("user-input received for node %s answers=%s", node_id, answers)
+            if node_id and answers is not None:
+                # Route to this client's processors plus their subgraphs
+                processors: list[GraphProcessor] = []
+                for root in list(self._processors):
+                    processors.extend(root.all_descendants())
+                for processor in processors:
+                    try:
+                        await processor.user_input(node_id, answers)
+                    except Exception:
+                        continue
             logger.debug("User input received: %s", data)
         elif msg_type == "abort":
-            await websocket.send(json.dumps({"message": "abort", "data": {}}))
+            for processor in list(self._processors):
+                try:
+                    await processor.abort()
+                except Exception:
+                    continue
         elif msg_type == "pause":
-            await websocket.send(json.dumps({"message": "pause", "data": {}}))
+            for processor in list(self._processors):
+                try:
+                    await processor.pause()
+                except Exception:
+                    continue
         elif msg_type == "resume":
-            await websocket.send(json.dumps({"message": "resume", "data": {}}))
+            for processor in list(self._processors):
+                try:
+                    await processor.resume()
+                except Exception:
+                    continue
         elif msg_type == "run":
-            # Send minimal lifecycle so UI doesn’t error. No real execution here.
+            # Execute via Python GraphProcessor (synthetic events for now)
             graph_id = (data or {}).get("graphId")
-            await websocket.send(json.dumps({"message": "start", "data": {"graphId": graph_id}}))
-            await websocket.send(
-                json.dumps(
-                    {
-                        "message": "done",
-                        "data": {"results": {}},  # empty results
-                    }
-                )
-            )
+            inputs = (data or {}).get("inputs") or {}
+            context_values = (data or {}).get("contextValues") or {}
+            try:
+                print(f"[RemoteDebugger] run received raw data={data}")
+            except Exception:
+                pass
+
+            # Build project from last uploaded dynamic data
+            project_json = self.dynamic_data.get("project") or {}
+            try:
+                project = project_from_json(project_json)
+            except Exception as e:
+                logger.exception("Invalid project payload: %s", e)
+                await websocket.send(json.dumps({"message": "error", "data": {"error": str(e)}}))
+                return
+
+            # Resolve graph to run: prefer explicit graphId, then project mainGraphId, then first graph.
+            chosen_graph_id = graph_id
+            if not chosen_graph_id:
+                chosen_graph_id = project.metadata.mainGraphId
+            if not chosen_graph_id and project.graphs:
+                chosen_graph_id = next(iter(project.graphs.keys()))
+
+            try:
+                print(f"[RemoteDebugger] run requested graphId={graph_id} resolved={chosen_graph_id}")
+            except Exception:
+                pass
+
+            processor = GraphProcessor(project, chosen_graph_id, settings=self.dynamic_data.get("settings"))
+            self._processors.append(processor)
+
+            async def forward_events():
+                async for ev_type, ev_data in processor.events():
+                    # Shape events as the UI expects: message + data
+                    # Convert dataclasses to dicts via json dumps/loads for simplicity
+                    try:
+                        payload = json.loads(json.dumps(ev_data, default=lambda o: getattr(o, "__dict__", str(o))))
+                    except Exception:
+                        payload = {"raw": str(ev_data)}
+
+                    # Debug: Log all main graph events (not just nodeStart/nodeFinish)
+                    if isinstance(ev_data, dict) and "subgraphNodeId" not in ev_data:
+                        try:
+                            with open("/tmp/main_graph_events.log", "a") as f:
+                                f.write(f"[MainGraph] {ev_type}: {json.dumps(payload, indent=2)}\n")
+                        except Exception:
+                            pass
+
+                    await websocket.send(json.dumps({"message": ev_type, "data": payload}))
+
+            async def _run_and_forward():
+                # Start event forwarding and graph execution together
+                forward_task = asyncio.create_task(forward_events())
+
+                try:
+                    await processor.process_graph(
+                        inputs=inputs,
+                        context_values=context_values,
+                        run_to_node_ids=data.get("runToNodeIds"),
+                        run_from_node_id=data.get("runFromNodeId"),
+                    )
+                except Exception as e:
+                    # Emit error event to UI
+                    try:
+                        await websocket.send(json.dumps({"message": "error", "data": {"error": str(e)}}))
+                    except Exception:
+                        pass
+                finally:
+                    if processor in self._processors:
+                        self._processors.remove(processor)
+
+                # Wait for all events to be forwarded
+                await forward_task
+
+            asyncio.create_task(_run_and_forward())
         elif isinstance(msg_type, str) and msg_type.startswith("datasets:"):
             # Respond with generic ack for dataset operations
             request_id = (data or {}).get("requestId")
@@ -111,6 +218,26 @@ class RemoteDebuggerServer:
         finally:
             await self._on_disconnect(websocket)
 
+    async def _dump_project_to_temp(self, websocket: WebSocketServerProtocol) -> None:
+        project_json = self.dynamic_data.get("project") or {}
+        if not project_json:
+            return
+        # Create a temporary file and write the project JSON for inspection
+        with tempfile.NamedTemporaryFile(prefix="rivet_project_", suffix=".json", delete=False, mode="w") as f:
+            json.dump(project_json, f, indent=2)
+            path = f.name
+        self._last_project_dump_path = path
+        # Inform client via trace and log it
+        msg = f"Project JSON dumped to: {path}"
+        # Print to stdout in addition to logger for visibility when logging isn't configured
+        print(msg)
+        logger.info(msg)
+        try:
+            await websocket.send(json.dumps({"message": "trace", "data": msg}))
+        except Exception:
+            # If trace fails, ignore
+            pass
+
     async def start(self):
         logger.info("Starting RemoteDebuggerServer on ws://%s:%d", self.host, self.port)
         self._server = await websockets.serve(self._client_handler, self.host, self.port)
@@ -131,4 +258,3 @@ async def run_server_forever():
             await asyncio.sleep(3600)
     except asyncio.CancelledError:
         await server.stop()
-

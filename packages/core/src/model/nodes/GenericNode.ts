@@ -113,6 +113,32 @@ export function genericNodeDefinition<Data>(spec: GenericNodeSpec<Data>) {
 
         const variadic: any = (iSpec as any).variadic;
         if (variadic) {
+          // Interpolation-derived inputs: expand tokens in a dataKey field
+          if (variadic.type === 'interpolation') {
+            const dataKey: string = variadic.dataKey;
+            const baseId: string = variadic.baseId ?? String(base.id ?? 'input');
+            const titlePattern: string = variadic.titlePattern ?? '{key}';
+            const raw = (this.chartNode.data as any)?.[dataKey];
+            if (typeof raw === 'string') {
+              let tokens = extractInterpolationVariables(raw);
+              const ignorePrefixes: string[] = variadic.ignorePrefixes ?? ['@graphInputs.', '@context.'];
+              tokens = tokens.filter((t) => !ignorePrefixes.some((p) => t.startsWith(p)));
+              const uniq = Array.from(new Set(tokens));
+              for (const key of uniq) {
+                const id = `${baseId}${key}` as PortId;
+                const title = titlePattern.replace('{key}', key);
+                expandedInputs.push({
+                  id,
+                  title,
+                  dataType: base.dataType,
+                  required: base.required,
+                  coerced: base.coerced,
+                  description: base.description,
+                } as NodeInputDefinition);
+              }
+            }
+            continue;
+          }
           // Simple numeric variadic expansion for inputs: baseId, titlePattern, startAt, min
           const baseId: string = variadic.baseId ?? String(base.id);
           const titlePattern: string = variadic.titlePattern ?? String(base.title ?? 'Input {n}');

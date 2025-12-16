@@ -1,0 +1,23 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Passthrough
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: in
+            dataType: string
+          outgoingConnections:
+            - data->"Passthrough" n2/input
+        '[n2]:passthroughNode "Passthrough"':
+          data: {}
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

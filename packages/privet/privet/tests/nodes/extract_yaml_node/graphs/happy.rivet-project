@@ -1,0 +1,37 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Extract YAML
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: input
+            dataType: string
+          outgoingConnections:
+            - data->"Extract YAML" n2/input
+        '[n2]:extractYaml "Extract YAML"':
+          data:
+            rootPropertyName: yamlDocument
+            useRootPropertyNameInput: false
+            objectPath: $.yamlDocument.settings.name
+            useObjectPathInput: false
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+            - matches->"Graph Output" n4/value
+            - noMatch->"Graph Output" n5/value
+        '[n3]:graphOutput "Output"':
+          data:
+            id: output
+            dataType: object
+        '[n4]:graphOutput "Matches"':
+          data:
+            id: matches
+            dataType: any[]
+        '[n5]:graphOutput "NoMatch"':
+          data:
+            id: noMatch
+            dataType: string
+      connections: {}

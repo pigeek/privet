@@ -49,4 +49,57 @@ class ReadFileSchema(NodeSchema):
 @bindschema(schema=ReadFileSchema)
 class ReadFileNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import os
+        from ..utils.inputs import get_input_or_data
+
+        # Get the file path from input or data
+        path = get_input_or_data(self.node.data, inputs, 'path', 'string', 'usePathInput')
+        if not path:
+            path = ''
+
+        # Expand user home directory
+        path = os.path.expanduser(path)
+
+        try:
+            as_binary = self.node.data.get('asBinary', False)
+
+            if as_binary:
+                # Read as binary
+                with open(path, 'rb') as f:
+                    content = f.read()
+                return {
+                    'content': {
+                        'type': 'binary',
+                        'value': content,
+                    }
+                }
+            else:
+                # Read as text
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return {
+                    'content': {
+                        'type': 'string',
+                        'value': content,
+                    }
+                }
+        except FileNotFoundError:
+            if self.node.data.get('errorOnMissingFile', False):
+                raise FileNotFoundError(f"File not found: {path}")
+            else:
+                return {
+                    'content': {
+                        'type': 'control-flow-excluded',
+                        'value': None,
+                    }
+                }
+        except Exception as err:
+            if self.node.data.get('errorOnMissingFile', False):
+                raise
+            else:
+                return {
+                    'content': {
+                        'type': 'control-flow-excluded',
+                        'value': None,
+                    }
+                }

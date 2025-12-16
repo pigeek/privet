@@ -1,0 +1,19 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Number
+      nodes:
+        '[n1]:number "Number"':
+          data:
+            value: 42
+            useValueInput: false
+          outgoingConnections:
+            - value->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: number
+      connections: {}

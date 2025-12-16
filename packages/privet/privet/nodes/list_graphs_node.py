@@ -48,4 +48,19 @@ class ListGraphsSchema(NodeSchema):
 @bindschema(schema=ListGraphsSchema)
 class ListGraphsNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        project = (self.context or {}).get("project")
+        graphs = list(getattr(project, "graphs", {}).values()) if project else []
+
+        graph_refs = []
+        graph_names = []
+        for graph in graphs:
+            meta = getattr(graph, "metadata", {}) or {}
+            graph_id = meta.get("id") if isinstance(meta, dict) else getattr(meta, "id", "")
+            graph_name = meta.get("name") if isinstance(meta, dict) else getattr(meta, "name", "")
+            graph_refs.append({"graphId": graph_id or "", "graphName": graph_name or ""})
+            graph_names.append(graph_name or "")
+
+        return {
+            "graphs": {"type": "graph-reference[]", "value": graph_refs},
+            "graph-names": {"type": "string[]", "value": graph_names},
+        }

@@ -54,4 +54,20 @@ class FilterSchema(NodeSchema):
 @bindschema(schema=FilterSchema)
 class FilterNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type
+
+        array = coerce_type(inputs.get('array'), 'any[]')
+        include = coerce_type(inputs.get('include'), 'boolean[]')
+
+        # Zip arrays together and filter where include is True
+        filtered = [val for val, inc in zip(array, include) if inc]
+
+        # Preserve the original array type if possible
+        original_type = inputs.get('array', {}).get('type', 'any[]')
+
+        return {
+            'filtered': {
+                'type': original_type,
+                'value': filtered,
+            }
+        }

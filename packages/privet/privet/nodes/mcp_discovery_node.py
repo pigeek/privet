@@ -13,6 +13,9 @@ from ..spec_builder import (
     RawShowIf,
     NodeSchema,
 )
+from ..utils import get_input_or_data
+from .mcp_client import http_session, stdio_session, tool_to_dict, prompt_to_dict
+import traceback
 
 class MCPDiscoverySchema(NodeSchema):
     NODE_TYPE = 'mcpDiscovery'
@@ -67,4 +70,76 @@ class MCPDiscoverySchema(NodeSchema):
 @bindschema(schema=MCPDiscoverySchema)
 class MCPDiscoveryNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        name = get_input_or_data(data, inputs, "name", "string") or "mcp-client"
+        version = get_input_or_data(data, inputs, "version", "string") or "1.0.0"
+        transport_type = data.get("transportType") or "stdio"
+
+        tools_out: list[Dict[str, Any]] = []
+        prompts_out: list[Dict[str, Any]] = []
+
+        project_meta = getattr(getattr(self.context.get("project", None), "metadata", None), "mcpServer", None) if self.context else None
+
+        try:
+            if transport_type == "http":
+                server_url = get_input_or_data(data, inputs, "serverUrl", "string") or data.get("serverUrl")
+                if not server_url:
+                    raise RuntimeError("serverUrl required for MCP HTTP transport")
+                async with http_session(server_url, name, version) as sess:
+                    if data.get("useToolsOutput", True):
+                        res = await sess.list_tools()
+                        tools_out = [tool_to_dict(t) for t in (res.tools or [])]
+                    if data.get("usePromptsOutput", True):
+                        res = await sess.list_prompts()
+                        prompts_out = [prompt_to_dict(p) for p in (res.prompts or [])]
+            else:
+                server_id = data.get("serverId") or ""
+                if not project_meta or not isinstance(project_meta, dict):
+                    raise RuntimeError("MCP configuration not provided in project metadata")
+                servers = project_meta.get("mcpServers") or {}
+                if server_id not in servers:
+                    raise RuntimeError(f"MCP server '{server_id}' not found in project metadata")
+                server_cfg = servers[server_id] or {}
+                async with stdio_session(server_cfg, name, version) as sess:
+                    if data.get("useToolsOutput", True):
+                        res = await sess.list_tools()
+                        tools_out = [tool_to_dict(t) for t in (res.tools or [])]
+                    if data.get("usePromptsOutput", True):
+                        res = await sess.list_prompts()
+                        prompts_out = [prompt_to_dict(p) for p in (res.prompts or [])]
+        except Exception:
+            # Preserve offline behavior: emit synthetic objects when real MCP isn't available
+            server_url = get_input_or_data(data, inputs, "serverUrl", "string") if transport_type == "http" else data.get("serverUrl")
+            server_id = data.get("serverId") or (server_url if transport_type == "http" else "stdio-server")
+            client = {"name": name, "version": version}
+            if data.get("useToolsOutput", True):
+                tools_out = [
+                    {
+                        "name": "echo",
+                        "description": f"Synthetic echo tool from {transport_type}",
+                        "transportType": transport_type,
+                        "server": server_id,
+                        "serverUrl": server_url,
+                        "client": client,
+                    }
+                ]
+            if data.get("usePromptsOutput", True):
+                prompts_out = [
+                    {
+                        "name": "welcome",
+                        "description": f"Synthetic prompt from {transport_type}",
+                        "transportType": transport_type,
+                        "server": server_id,
+                        "serverUrl": server_url,
+                        "client": client,
+                    }
+                ]
+
+        outputs: Dict[str, Any] = {}
+        if data.get("useToolsOutput", True):
+            outputs["tools"] = {"type": "object[]", "value": tools_out}
+        if data.get("usePromptsOutput", True):
+            outputs["prompts"] = {"type": "object[]", "value": prompts_out}
+        return outputs

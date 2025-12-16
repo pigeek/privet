@@ -1,0 +1,33 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Extract Markdown Code Blocks
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: input
+            dataType: string
+          outgoingConnections:
+            - data->"Extract Markdown Code Blocks" n2/input
+        '[n2]:extractMarkdownCodeBlocks "Extract Markdown Code Blocks"':
+          data: {}
+          outgoingConnections:
+            - firstBlock->"Graph Output" n3/value
+            - allBlocks->"Graph Output" n4/value
+            - languages->"Graph Output" n5/value
+        '[n3]:graphOutput "First"':
+          data:
+            id: first
+            dataType: string
+        '[n4]:graphOutput "All"':
+          data:
+            id: all
+            dataType: string[]
+        '[n5]:graphOutput "Langs"':
+          data:
+            id: langs
+            dataType: string[]
+      connections: {}

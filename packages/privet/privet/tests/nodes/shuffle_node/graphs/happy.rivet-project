@@ -1,0 +1,27 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Shuffle
+      nodes:
+        '[n1]:graphInput "Array"':
+          data:
+            id: arr
+            dataType: any[]
+            defaultValue:
+              - a
+              - b
+              - c
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Shuffle" n2/array
+        '[n2]:shuffle "Shuffle"':
+          outgoingConnections:
+            - shuffled->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any[]
+      connections: {}

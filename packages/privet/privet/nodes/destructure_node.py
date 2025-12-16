@@ -49,4 +49,27 @@ class DestructureSchema(NodeSchema):
 @bindschema(schema=DestructureSchema)
 class DestructureNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from jsonpath_ng import parse as jsonpath_parse
+        from ..utils.data_values import coerce_type_optional
+
+        input_object = coerce_type_optional(inputs.get('object'), 'object')
+        paths = self.data.get('paths', ['$.value'])
+
+        output = {}
+
+        for index, path in enumerate(paths):
+            match = None
+            try:
+                jsonpath_expr = jsonpath_parse(path.strip())
+                results = jsonpath_expr.find(input_object or {})
+                # JSONPath with wrap=false behavior: return first match or undefined
+                match = results[0].value if results else None
+            except Exception:
+                match = None
+
+            output[f'match_{index}'] = {
+                'type': 'any',
+                'value': match,
+            }
+
+        return output

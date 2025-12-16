@@ -53,4 +53,28 @@ class PopSchema(NodeSchema):
 @bindschema(schema=PopSchema)
 class PopNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        input_array_value = inputs.get('array', {})
+        input_array = input_array_value.get('value', []) if isinstance(input_array_value, dict) else []
+
+        if not isinstance(input_array, list) or len(input_array) == 0:
+            raise ValueError("Input array is empty or not an array")
+
+        from_front = self.node.data.get('fromFront', False)
+
+        if from_front:
+            last_item = input_array[0]
+            rest = input_array[1:]
+        else:
+            last_item = input_array[-1]
+            rest = input_array[:-1]
+
+        return {
+            'lastItem': {
+                'type': 'any',
+                'value': last_item,
+            },
+            'restOfArray': {
+                'type': 'any[]',
+                'value': rest,
+            }
+        }

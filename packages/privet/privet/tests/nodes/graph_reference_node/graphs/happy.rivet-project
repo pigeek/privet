@@ -1,0 +1,40 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Graph Ref
+      nodes:
+        '[n1]:graphReference "Graph Ref"':
+          data:
+            graphId: sub
+            useGraphIdOrNameInput: false
+          outgoingConnections:
+            - graph->"Graph Output" n3/value
+        '[n2]:graphInput "Unused"':
+          data:
+            id: dummy
+            dataType: string
+          outgoingConnections: []
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: graph-reference
+      connections: {}
+    sub:
+      metadata:
+        id: sub
+        name: Sub Graph
+      nodes:
+        '[s1]:graphInput "Input"':
+          data:
+            id: x
+            dataType: string
+          outgoingConnections:
+            - data->"Output" s2/value
+        '[s2]:graphOutput "Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

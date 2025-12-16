@@ -1,0 +1,26 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Load Dataset
+      nodes:
+        '[n1]:createDataset "Create"':
+          outgoingConnections:
+            - datasetId_out->"Append" n2/datasetId
+        '[n2]:appendToDataset "Append"':
+          data:
+            datasetId: ''
+            useDatasetIdInput: true
+          outgoingConnections:
+            - dataset->"Load" n3/datasetId
+            - dataset->"Graph Output" n4/value
+        '[n3]:loadDataset "Load"':
+          outgoingConnections:
+            - dataset->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object[]
+      connections: {}

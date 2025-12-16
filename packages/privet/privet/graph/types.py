@@ -45,6 +45,8 @@ class ProjectMetadata:
     id: str
     name: str
     mainGraphId: Optional[GraphId] = None
+    # Optional MCP server configuration (mirrors TS metadata.mcpServer)
+    mcpServer: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -60,6 +62,7 @@ def project_from_json(payload: Dict[str, Any]) -> Project:
         id=meta.get("id") or "",
         name=meta.get("name") or "",
         mainGraphId=meta.get("mainGraphId"),
+        mcpServer=meta.get("mcpServer"),
     )
 
     def _node_from_json(n: Dict[str, Any]) -> ChartNode:

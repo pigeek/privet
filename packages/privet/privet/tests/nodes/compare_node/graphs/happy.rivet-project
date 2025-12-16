@@ -1,0 +1,31 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Compare
+      nodes:
+        '[n1]:graphInput "A"':
+          data:
+            id: a
+            dataType: number
+          outgoingConnections:
+            - data->"Compare" n3/a
+        '[n2]:graphInput "B"':
+          data:
+            id: b
+            dataType: number
+          outgoingConnections:
+            - data->"Compare" n3/b
+        '[n3]:compare "Compare"':
+          data:
+            comparisonFunction: '>'
+            useComparisonFunctionInput: false
+          outgoingConnections:
+            - output->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: boolean
+      connections: {}

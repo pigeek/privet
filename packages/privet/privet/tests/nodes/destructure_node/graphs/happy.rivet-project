@@ -1,0 +1,38 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Destructure
+      nodes:
+        '[n1]:graphInput "Object"':
+          data:
+            id: obj
+            dataType: object
+            defaultValue:
+              user:
+                name: Rivet
+                address:
+                  city: Austin
+                  zip: 73301
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Destructure" n2/object
+        '[n2]:destructure "Destructure"':
+          data:
+            paths:
+              - $.user.name
+              - $.user.address.city
+          outgoingConnections:
+            - match_0->"Name" n3/value
+            - match_1->"City" n4/value
+        '[n3]:graphOutput "Name"':
+          data:
+            id: name
+            dataType: string
+        '[n4]:graphOutput "City"':
+          data:
+            id: city
+            dataType: string
+      connections: {}

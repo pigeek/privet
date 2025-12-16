@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Image
+      nodes:
+        '[n1]:graphInput "Image Data"':
+          data:
+            id: img
+            dataType: binary
+            defaultValue: abcd
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Image" n2/data
+        '[n2]:image "Image"':
+          data:
+            useDataInput: true
+            mediaType: image/png
+            useMediaTypeInput: false
+          outgoingConnections:
+            - image->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: image
+      connections: {}

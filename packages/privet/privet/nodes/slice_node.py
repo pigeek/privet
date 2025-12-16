@@ -60,4 +60,26 @@ class SliceSchema(NodeSchema):
 @bindschema(schema=SliceSchema)
 class SliceNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type
+        from ..utils.inputs import get_input_or_data
+
+        input_array = coerce_type(inputs.get('input'), 'any[]')
+
+        # Get start and count from inputs or data
+        start = get_input_or_data(self.node.data, inputs, 'start', 'number', 'useStartInput')
+        if start is None:
+            start = 0
+
+        count = get_input_or_data(self.node.data, inputs, 'count', 'number', 'useCountInput')
+        if count is None:
+            count = len(input_array)
+
+        # Slice the array
+        output_array = input_array[int(start):int(start + count)]
+
+        return {
+            'output': {
+                'type': 'any[]',
+                'value': output_array,
+            }
+        }

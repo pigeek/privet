@@ -1,0 +1,35 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: If
+      nodes:
+        '[n1]:graphInput "Cond"':
+          data:
+            id: cond
+            dataType: boolean
+          outgoingConnections:
+            - data->"If" n3/if
+        '[n2]:graphInput "Value"':
+          data:
+            id: val
+            dataType: string
+          outgoingConnections:
+            - data->"If" n3/value
+        '[n3]:if "If"':
+          data:
+            unconnectedControlFlowExcluded: false
+          outgoingConnections:
+            - output->"Graph Output" n4/value
+            - falseOutput->"Graph Output" n5/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: true_out
+            dataType: string
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: false_out
+            dataType: string
+      connections: {}

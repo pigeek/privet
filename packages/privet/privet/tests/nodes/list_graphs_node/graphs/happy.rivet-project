@@ -1,0 +1,23 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Main
+      nodes:
+        '[n1]:listGraphs "List Graphs"':
+          data: {}
+          outgoingConnections:
+            - graph-names->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: names
+            dataType: string[]
+      connections: {}
+    other:
+      metadata:
+        id: other
+        name: Other
+      nodes: {}
+      connections: {}

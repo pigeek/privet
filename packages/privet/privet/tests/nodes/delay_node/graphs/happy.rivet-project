@@ -1,0 +1,26 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Delay
+      nodes:
+        '[n1]:graphInput "Value"':
+          data:
+            id: val
+            dataType: string
+            defaultValue: done
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Delay" n2/input
+        '[n2]:delayNode "Delay"':
+          data:
+            duration: 0.01
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

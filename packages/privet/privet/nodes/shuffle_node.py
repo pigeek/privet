@@ -47,4 +47,29 @@ class ShuffleSchema(NodeSchema):
 @bindschema(schema=ShuffleSchema)
 class ShuffleNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import random
+
+        input_value = inputs.get('array', {})
+
+        # Check if it's an array DataValue
+        if isinstance(input_value, dict) and input_value.get('type', '').endswith('[]'):
+            items = input_value.get('value', [])
+        elif isinstance(input_value, dict) and 'value' in input_value:
+            # Single value, wrap in array
+            items = [input_value.get('value')]
+        else:
+            items = []
+
+        # Shuffle the items
+        shuffled = items.copy()
+        random.shuffle(shuffled)
+
+        # Preserve original type
+        original_type = inputs.get('array', {}).get('type', 'any[]')
+
+        return {
+            'shuffled': {
+                'type': original_type,
+                'value': shuffled,
+            }
+        }

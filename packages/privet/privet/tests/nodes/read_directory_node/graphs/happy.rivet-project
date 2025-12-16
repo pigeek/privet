@@ -1,0 +1,36 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Read Directory
+      nodes:
+        '[n1]:graphInput "Path"':
+          data:
+            id: path
+            dataType: string
+            defaultValue: ''
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Read Directory" n2/path
+        '[n2]:readDirectory "Read Directory"':
+          data:
+            recursive: true
+            includeDirectories: true
+            filterGlobs: []
+            ignores: []
+            relative: true
+            usePathInput: true
+            useRecursiveInput: false
+            useIncludeDirectoriesInput: false
+            useFilterGlobsInput: false
+            useRelativeInput: false
+            useIgnoresInput: false
+          outgoingConnections:
+            - paths->"Paths" n3/value
+        '[n3]:graphOutput "Paths"':
+          data:
+            id: out
+            dataType: string[]
+      connections: {}

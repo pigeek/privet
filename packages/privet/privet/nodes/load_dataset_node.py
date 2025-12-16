@@ -53,4 +53,20 @@ class LoadDatasetSchema(NodeSchema):
 @bindschema(schema=LoadDatasetSchema)
 class LoadDatasetNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+        dataset_id = inputs.get("datasetId") if data.get("useDatasetIdInput") else data.get("datasetId")
+        if isinstance(dataset_id, dict):
+            dataset_id = dataset_id.get("value")
+        dataset_id = str(dataset_id or "")
+
+        datasets = (self.context or {}).get("datasets") or {}
+        ds = datasets.get(dataset_id)
+        if ds is None:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+
+        rows = ds.get("rows", [])
+        return {
+            "dataset": {"type": "object[]", "value": rows},
+            "datasetId_out": {"type": "string", "value": dataset_id},
+        }

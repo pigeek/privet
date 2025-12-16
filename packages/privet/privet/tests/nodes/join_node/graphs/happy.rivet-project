@@ -1,0 +1,30 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Join
+      nodes:
+        '[n1]:graphInput "Strings"':
+          data:
+            id: strs
+            dataType: string[]
+            defaultValue:
+              - Hello
+              - World
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Join" n2/input1
+        '[n2]:join "Join"':
+          data:
+            joinString: ", "
+            useJoinStringInput: false
+            flatten: true
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

@@ -1,0 +1,30 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Audio
+      nodes:
+        '[n1]:graphInput "Audio"':
+          data:
+            id: aud
+            dataType: audio
+            defaultValue:
+              data: beep
+              mediaType: audio/wav
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Audio" n2/data
+        '[n2]:audio "Audio"':
+          data:
+            useDataInput: true
+            mediaType: audio/wav
+            useMediaTypeInput: false
+          outgoingConnections:
+            - data->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: audio
+      connections: {}

@@ -54,4 +54,36 @@ class ImageSchema(NodeSchema):
 @bindschema(schema=ImageSchema)
 class ImageNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import base64
+        from ..utils.data_values import expect_type, coerce_type_optional
+
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        media_type = data.get("mediaType") or "image/png"
+        if data.get("useMediaTypeInput"):
+            media_type = coerce_type_optional(inputs.get("mediaType"), "string") or media_type
+
+        image_bytes: Any
+        if data.get("useDataInput"):
+            image_value = expect_type(inputs.get("data"), "binary")
+            image_bytes = image_value
+        else:
+            data_ref = (data.get("data") or {}).get("refId")
+            if not data_ref:
+                raise ValueError("No image data provided")
+            project = (self.context or {}).get("project")
+            encoded = getattr(project, "data", {}).get(data_ref) if project else None
+            if encoded is None:
+                raise ValueError(f"No data found for ref {data_ref}")
+            try:
+                image_bytes = base64.b64decode(encoded)
+            except Exception as exc:
+                raise ValueError(f"Failed to decode image data for ref {data_ref}") from exc
+
+        return {
+            "image": {
+                "type": "image",
+                "value": {"mediaType": media_type, "data": image_bytes},
+            }
+        }

@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Extract JSON
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: input
+            dataType: string
+          outgoingConnections:
+            - data->"Extract JSON" n2/input
+        '[n2]:extractJson "Extract JSON"':
+          data: {}
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+            - noMatch->"Graph Output" n4/value
+        '[n3]:graphOutput "Output"':
+          data:
+            id: output
+            dataType: object
+        '[n4]:graphOutput "NoMatch"':
+          data:
+            id: noMatch
+            dataType: string
+      connections: {}

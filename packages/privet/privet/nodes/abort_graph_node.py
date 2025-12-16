@@ -51,4 +51,33 @@ class AbortGraphSchema(NodeSchema):
 @bindschema(schema=AbortGraphSchema)
 class AbortGraphNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type_optional
+
+        # Determine whether to abort successfully or with error
+        if self.node.data.get('useSuccessfullyInput'):
+            successfully = coerce_type_optional(inputs.get('successfully'), 'boolean')
+            if successfully is None:
+                successfully = self.node.data.get('successfully', True)
+        else:
+            successfully = self.node.data.get('successfully', True)
+
+        # Get the processor from context
+        processor = self.context.get('processor')
+        if not processor:
+            raise RuntimeError("Processor not available in context")
+
+        if successfully:
+            # Successfully abort (early-exit)
+            await processor.abort(successful=True)
+        else:
+            # Error abort
+            error_message = coerce_type_optional(inputs.get('data'), 'string')
+            if error_message:
+                error_message = error_message.strip()
+            if not error_message:
+                error_message = self.node.data.get('errorMessage') or 'Graph aborted with error'
+
+            await processor.abort(successful=False, error=error_message)
+
+        # AbortGraphNode doesn't have any outputs
+        return {}

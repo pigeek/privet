@@ -99,5 +99,45 @@ class JoinSchema(NodeSchema):
 @bindschema(schema=JoinSchema)
 class JoinNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        # For now, just print (and optionally could concatenate strings later)
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type, coerce_type_optional
+
+        # Get join string from input or data
+        join_string = self.node.data.get('joinString', '\n')
+        if self.node.data.get('useJoinStringInput'):
+            input_join = coerce_type_optional(inputs.get('joinString'), 'string')
+            if input_join is not None:
+                join_string = input_join
+
+        # Handle escape characters (\n, \t, etc.)
+        join_string = join_string.replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+
+        # Collect all input values
+        input_values = []
+        flatten = self.node.data.get('flatten', True)
+
+        # Get all inputs that start with 'input'
+        input_keys = sorted([k for k in (inputs or {}).keys() if k.startswith('input')])
+
+        for key in input_keys:
+            input_value = inputs[key]
+
+            # Check if it's an array and should be flattened
+            if isinstance(input_value, dict) and input_value.get('type', '').endswith('[]') and flatten:
+                # Flatten the array
+                array_values = input_value.get('value', [])
+                for val in array_values:
+                    input_values.append(str(val))
+            else:
+                # Coerce to string
+                str_value = coerce_type(input_value, 'string')
+                input_values.append(str_value)
+
+        # Join all values
+        output_value = join_string.join(input_values)
+
+        return {
+            'output': {
+                'type': 'string',
+                'value': output_value,
+            }
+        }

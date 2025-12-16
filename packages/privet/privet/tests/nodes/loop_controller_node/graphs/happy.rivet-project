@@ -1,0 +1,37 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Loop Controller
+      nodes:
+        '[n1]:loopController "Loop Controller"':
+          data:
+            maxIterations: 3
+            atMaxIterationsAction: break
+          outgoingConnections:
+            - output1->"Graph Output" n4/value
+            - break->"Graph Output" n5/value
+        '[n2]:graphInput "Val"':
+          data:
+            id: val
+            dataType: string
+          outgoingConnections:
+            - data->"Loop Controller" n1/input1
+        '[n3]:graphInput "Continue"':
+          data:
+            id: continue
+            dataType: boolean
+          outgoingConnections:
+            - data->"Loop Controller" n1/continue
+        '[n4]:graphOutput "Output"':
+          data:
+            id: out
+            dataType: string
+          outgoingConnections: []
+        '[n5]:graphOutput "Break"':
+          data:
+            id: br
+            dataType: any
+      connections: {}

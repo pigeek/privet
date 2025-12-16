@@ -1,0 +1,26 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Split
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: text
+            dataType: string
+          outgoingConnections:
+            - data->"Split Text" n2/string
+        '[n2]:split "Split Text"':
+          data:
+            delimiter: ","
+            useDelimiterInput: false
+            regex: false
+          outgoingConnections:
+            - splitString->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string[]
+      connections: {}

@@ -68,4 +68,28 @@ class AppendtoDatasetSchema(NodeSchema):
 @bindschema(schema=AppendtoDatasetSchema)
 class AppendtoDatasetNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        dataset_id = inputs.get("datasetId") if data.get("useDatasetIdInput") else data.get("datasetId")
+        if isinstance(dataset_id, dict):
+            dataset_id = dataset_id.get("value")
+        dataset_id = str(dataset_id or "")
+
+        datasets = (self.context or {}).setdefault("datasets", {})
+        ds = datasets.setdefault(dataset_id, {"id": dataset_id, "name": dataset_id, "rows": []})
+
+        row_id_val = inputs.get("id")
+        row_id = row_id_val.get("value") if isinstance(row_id_val, dict) else row_id_val
+        if row_id is None:
+            row_id = str(len(ds.get("rows", [])))
+
+        row_data = inputs.get("data")
+        embedding = inputs.get("embedding")
+        row = {"id": row_id, "data": row_data, "embedding": embedding}
+        ds.setdefault("rows", []).append(row)
+
+        return {
+            "dataset": {"type": "object", "value": ds},
+            "id_out": {"type": "string", "value": row_id},
+        }

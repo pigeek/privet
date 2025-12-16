@@ -1,0 +1,30 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Extract Object Path
+      nodes:
+        '[n1]:graphInput "Object"':
+          data:
+            id: obj
+            dataType: object
+          outgoingConnections:
+            - data->"Extract Object Path" n2/object
+        '[n2]:extractObjectPath "Extract Object Path"':
+          data:
+            path: $.items[0].name
+            usePathInput: false
+          outgoingConnections:
+            - match->"Graph Output" n3/value
+            - all_matches->"Graph Output" n4/value
+        '[n3]:graphOutput "Match"':
+          data:
+            id: match
+            dataType: any
+        '[n4]:graphOutput "All"':
+          data:
+            id: all
+            dataType: any[]
+      connections: {}

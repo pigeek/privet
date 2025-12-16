@@ -1,0 +1,24 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Create Dataset
+      nodes:
+        '[n1]:graphInput "ID"':
+          data:
+            id: did
+            dataType: string
+            defaultValue: ds1
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Create" n2/datasetId
+        '[n2]:createDataset "Create"':
+          outgoingConnections:
+            - datasetId_out->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

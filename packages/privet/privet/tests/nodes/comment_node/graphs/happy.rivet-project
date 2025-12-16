@@ -1,0 +1,15 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Comment
+      nodes:
+        '[n1]:comment "Note"':
+          data:
+            text: Hello
+            color: '#000000'
+            backgroundColor: '#ffffff'
+            height: 200
+      connections: {}

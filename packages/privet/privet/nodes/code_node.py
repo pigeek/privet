@@ -53,4 +53,25 @@ class CodeSchema(NodeSchema):
 @bindschema(schema=CodeSchema)
 class CodeNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        input_names = data.get("inputNames") or []
+        output_names = data.get("outputNames") or []
+
+        # Collect inputs in order input1, input2... or by configured names
+        ordered_inputs = []
+        for idx, name in enumerate(input_names, start=1):
+            key = f"input{idx}"
+            if key in inputs:
+                ordered_inputs.append(inputs[key])
+            elif name in inputs:
+                ordered_inputs.append(inputs[name])
+
+        outputs: Dict[str, Any] = {}
+        for idx, out_name in enumerate(output_names, start=1):
+            value = ordered_inputs[idx - 1] if idx - 1 < len(ordered_inputs) else None
+            outputs[out_name] = value if isinstance(value, dict) else {"type": "any", "value": value}
+            outputs[f"output{idx}"] = outputs[out_name]
+
+        return outputs

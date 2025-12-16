@@ -13,6 +13,10 @@ from ..spec_builder import (
     RawShowIf,
     NodeSchema,
 )
+from ..utils import get_input_or_data, unwrap_data_value
+from .mcp_client import http_session, stdio_session, prompt_result_to_dict, parse_json_field
+import json
+import traceback
 
 class MCPGetPromptSchema(NodeSchema):
     NODE_TYPE = 'mcpGetPrompt'
@@ -72,4 +76,54 @@ class MCPGetPromptSchema(NodeSchema):
 @bindschema(schema=MCPGetPromptSchema)
 class MCPGetPromptNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        name = get_input_or_data(data, inputs, "name", "string") or "mcp-get-prompt-client"
+        version = get_input_or_data(data, inputs, "version", "string") or "1.0.0"
+        transport_type = data.get("transportType") or "stdio"
+        prompt_name = get_input_or_data(data, inputs, "promptName", "string") or data.get("promptName") or "prompt"
+
+        prompt_args = get_input_or_data(data, inputs, "promptArguments", "object")
+        if prompt_args is None:
+            prompt_args = parse_json_field(data.get("promptArguments"))
+        else:
+            prompt_args = unwrap_data_value(prompt_args)
+
+        prompt_obj: Dict[str, Any] | None = None
+
+        project_meta = getattr(getattr(self.context.get("project", None), "metadata", None), "mcpServer", None) if self.context else None
+
+        try:
+            if transport_type == "http":
+                server_url = get_input_or_data(data, inputs, "serverUrl", "string") or data.get("serverUrl")
+                if not server_url:
+                    raise RuntimeError("serverUrl required for MCP HTTP transport")
+                async with http_session(server_url, name, version) as sess:
+                    res = await sess.get_prompt(prompt_name, prompt_args or {})
+                    prompt_obj = prompt_result_to_dict(res, prompt_name)
+            else:
+                server_id = data.get("serverId") or ""
+                if not project_meta or not isinstance(project_meta, dict):
+                    raise RuntimeError("MCP configuration not provided in project metadata")
+                servers = project_meta.get("mcpServers") or {}
+                if server_id not in servers:
+                    raise RuntimeError(f"MCP server '{server_id}' not found in project metadata")
+                server_cfg = servers[server_id] or {}
+                async with stdio_session(server_cfg, name, version) as sess:
+                    res = await sess.get_prompt(prompt_name, prompt_args or {})
+                    prompt_obj = prompt_result_to_dict(res, prompt_name)
+        except Exception:
+            server_url = get_input_or_data(data, inputs, "serverUrl", "string") if transport_type == "http" else data.get("serverUrl")
+            server_id = data.get("serverId") or (server_url if transport_type == "http" else "stdio-server")
+            prompt_obj = {
+                "name": prompt_name,
+                "arguments": prompt_args or {},
+                "transportType": transport_type,
+                "server": server_id,
+                "serverUrl": server_url,
+                "client": {"name": name, "version": version},
+                "content": f"Prompt {prompt_name} from {server_id}",
+            }
+
+        return {"prompt": {"type": "object", "value": prompt_obj}}

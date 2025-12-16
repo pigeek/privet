@@ -74,4 +74,71 @@ class ChunkSchema(NodeSchema):
 @bindschema(schema=ChunkSchema)
 class ChunkNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type
+
+        input_text = coerce_type(inputs.get('input'), 'string')
+        num_tokens_per_chunk = self.data.get('numTokensPerChunk', 1024)
+        overlap_percent = self.data.get('overlap', 0) / 100.0
+
+        # Clamp overlap between 0 and 1
+        overlap_percent = max(0.0, min(1.0, overlap_percent))
+
+        # Chunk the text
+        chunks = self._chunk_by_token_estimate(input_text, num_tokens_per_chunk, overlap_percent)
+
+        # Generate indexes (1-based)
+        indexes = list(range(1, len(chunks) + 1))
+
+        return {
+            'chunks': {
+                'type': 'string[]',
+                'value': chunks,
+            },
+            'first': {
+                'type': 'string',
+                'value': chunks[0] if chunks else '',
+            },
+            'last': {
+                'type': 'string',
+                'value': chunks[-1] if chunks else '',
+            },
+            'indexes': {
+                'type': 'number[]',
+                'value': indexes,
+            },
+            'count': {
+                'type': 'number',
+                'value': len(chunks),
+            },
+        }
+
+    def _chunk_by_token_estimate(self, text: str, target_tokens: int, overlap_percent: float) -> list[str]:
+        """
+        Chunks text by estimating token count using character-to-token ratio.
+        This is a simplified version that estimates ~4 characters per token (GPT average).
+        """
+        if not text:
+            return []
+
+        # Estimate characters per token (GPT models average ~4 chars per token)
+        chars_per_token = 4
+        target_chars = target_tokens * chars_per_token
+
+        chunks = []
+        remaining = text
+
+        while remaining:
+            # Take a chunk of approximately target_chars
+            chunk_end = min(len(remaining), target_chars)
+            chunk = remaining[:chunk_end]
+            chunks.append(chunk)
+
+            # Calculate overlap
+            overlap_chars = int(chunk_end * overlap_percent)
+            remaining = remaining[chunk_end - overlap_chars:]
+
+            # Prevent infinite loop if we're not making progress
+            if chunk_end == 0:
+                break
+
+        return chunks

@@ -1,0 +1,43 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Assemble Prompt
+      nodes:
+        '[n1]:graphInput "M1"':
+          data:
+            id: m1
+            dataType: chat-message
+          outgoingConnections:
+            - data->"Assemble Prompt" n4/message1
+        '[n2]:graphInput "M2"':
+          data:
+            id: m2
+            dataType: chat-message
+          outgoingConnections:
+            - data->"Assemble Prompt" n4/message2
+        '[n3]:graphInput "M3"':
+          data:
+            id: m3
+            dataType: chat-message
+          outgoingConnections:
+            - data->"Assemble Prompt" n4/message3
+        '[n4]:assemblePrompt "Assemble Prompt"':
+          data:
+            computeTokenCount: true
+            isLastMessageCacheBreakpoint: true
+            useIsLastMessageCacheBreakpointInput: false
+          outgoingConnections:
+            - prompt->"Graph Output" n5/value
+            - tokenCount->"Graph Output" n6/value
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: prompt
+            dataType: chat-message[]
+        '[n6]:graphOutput "Graph Output"':
+          data:
+            id: tokenCount
+            dataType: number
+      connections: {}

@@ -54,4 +54,31 @@ class GetDatasetRowSchema(NodeSchema):
 @bindschema(schema=GetDatasetRowSchema)
 class GetDatasetRowNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        dataset_id = inputs.get("datasetId") if data.get("useDatasetIdInput") else data.get("datasetId")
+        row_id = inputs.get("rowId") if data.get("useRowIdInput") else data.get("rowId")
+        if isinstance(dataset_id, dict):
+            candidate = dataset_id.get("value")
+            if isinstance(candidate, dict) and "id" in candidate:
+                dataset_id = candidate.get("id")
+            elif candidate is not None:
+                dataset_id = candidate
+            elif "id" in dataset_id:
+                dataset_id = dataset_id.get("id")
+        dataset_id = str(dataset_id or "")
+        if isinstance(row_id, dict):
+            row_id = row_id.get("value")
+
+        datasets = (self.context or {}).get("datasets") or {}
+        ds = datasets.get(dataset_id)
+        if ds is None:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+
+        rows = ds.get("rows", [])
+        match = next((r for r in rows if r.get("id") == row_id), None)
+        if match is None:
+            raise ValueError(f"Row {row_id} not found in dataset {dataset_id}")
+
+        return {"row": {"type": "object", "value": match}}

@@ -1,0 +1,22 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Get All Datasets
+      nodes:
+        '[n1]:createDataset "Create"':
+          data:
+            datasetId: dsAll
+            datasetName: dsAll
+          outgoingConnections:
+            - datasetId_out->"All" n2/datasetId
+        '[n2]:getAllDatasets "All"':
+          outgoingConnections:
+            - datasets->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object[]
+      connections: {}

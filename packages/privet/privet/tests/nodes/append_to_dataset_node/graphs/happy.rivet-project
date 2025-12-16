@@ -1,0 +1,44 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Append Dataset
+      nodes:
+        '[n1]:graphInput "ID"':
+          data:
+            id: did
+            dataType: string
+            defaultValue: ds2
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Create" n2/datasetId
+        '[n1b]:graphInput "Data"':
+          data:
+            id: data
+            dataType: string[]
+            defaultValue:
+              - row
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Append" n3/data
+        '[n2]:createDataset "Create"':
+          outgoingConnections:
+            - datasetId_out->"Append" n3/datasetId
+        '[n3]:appendToDataset "Append"':
+          data:
+            datasetId: ''
+            useDatasetIdInput: true
+          outgoingConnections:
+            - dataset->"Dataset" n4/value
+            - id_out->"Graph Output" n5/value
+        '[n4]:graphOutput "Dataset"':
+          data:
+            id: dataset
+            dataType: object
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}

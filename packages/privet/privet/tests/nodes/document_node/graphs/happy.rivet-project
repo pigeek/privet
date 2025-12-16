@@ -1,0 +1,34 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Document
+      nodes:
+        '[n1]:graphInput "Doc Data"':
+          data:
+            id: doc
+            dataType: string
+            defaultValue: body text
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Document" n2/data
+        '[n2]:document "Document"':
+          data:
+            useDataInput: true
+            mediaType: text/plain
+            useMediaTypeInput: false
+            title: Sample
+            useTitleInput: false
+            context: ctx
+            useContextInput: false
+            enableCitations: true
+            useEnableCitationsInput: false
+          outgoingConnections:
+            - data->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: document
+      connections: {}

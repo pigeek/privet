@@ -1,0 +1,30 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Vector Store
+      nodes:
+        '[n1]:graphInput "Vector"':
+          data:
+            id: vec
+            dataType: vector
+            defaultValue:
+              - 1
+              - 2
+              - 3
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Store" n2/vector
+        '[n2]:vectorStore "Store"':
+          data:
+            collectionId: coll
+            useCollectionIdInput: false
+          outgoingConnections:
+            - complete->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: boolean
+      connections: {}

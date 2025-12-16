@@ -1,0 +1,31 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Replace Dataset
+      nodes:
+        '[n1]:graphInput "Data"':
+          data:
+            id: data
+            dataType: object[]
+            defaultValue:
+              - id: row1
+                data: foo
+              - id: row2
+                data: bar
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Replace" n2/data
+        '[n2]:replaceDataset "Replace"':
+          data:
+            datasetId: ds3
+            useDatasetIdInput: false
+          outgoingConnections:
+            - dataset->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object[]
+      connections: {}

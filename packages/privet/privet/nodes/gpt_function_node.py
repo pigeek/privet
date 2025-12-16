@@ -61,4 +61,32 @@ class ToolSchema(NodeSchema):
 @bindschema(schema=ToolSchema)
 class ToolNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        name = inputs.get("name")["value"] if data.get("useNameInput") and isinstance(inputs.get("name"), dict) else data.get("name")
+        desc = inputs.get("description")["value"] if data.get("useDescriptionInput") and isinstance(inputs.get("description"), dict) else data.get("description")
+        schema = inputs.get("schema")["value"] if data.get("useSchemaInput") and isinstance(inputs.get("schema"), dict) else data.get("schema")
+
+        try:
+            import json
+
+            if isinstance(schema, str):
+                schema_obj = json.loads(schema)
+            elif schema is None:
+                schema_obj = {}
+            else:
+                schema_obj = schema
+        except Exception:
+            schema_obj = {}
+
+        fn = {
+            "type": "function",
+            "function": {
+                "name": name or "function",
+                "description": desc or "",
+                "parameters": schema_obj or {},
+                "strict": bool(data.get("strict")),
+            },
+        }
+        return {"function": {"type": "gpt-function", "value": fn}}

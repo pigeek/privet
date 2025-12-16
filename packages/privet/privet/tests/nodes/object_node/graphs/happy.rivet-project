@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Object
+      nodes:
+        '[n1]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+            defaultValue: World
+            useDefaultValueInput: false
+        '[n2]:object "Object"':
+          data:
+            jsonTemplate: |-
+              {
+                "greeting": {{@graphInputs.name}},
+                "echo": {{@graphInputs.name}}
+              }
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}

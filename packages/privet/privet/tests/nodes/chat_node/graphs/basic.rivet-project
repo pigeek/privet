@@ -1,0 +1,29 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Chat Basic
+      nodes:
+        '[n1]:graphInput "Prompt"':
+          data:
+            id: prompt
+            dataType: string
+          outgoingConnections:
+            - data->"Chat" n2/prompt
+        '[n2]:chat "Chat"':
+          data:
+            model: gpt-4o
+          outgoingConnections:
+            - response->"Response" n3/value
+            - all-messages->"Messages" n4/value
+        '[n3]:graphOutput "Response"':
+          data:
+            id: resp
+            dataType: string
+        '[n4]:graphOutput "Messages"':
+          data:
+            id: messages
+            dataType: chat-message[]
+      connections: {}

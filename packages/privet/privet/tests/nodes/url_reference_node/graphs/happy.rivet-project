@@ -1,0 +1,27 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: URL Reference
+      nodes:
+        '[n1]:graphInput "URL"':
+          data:
+            id: url
+            dataType: string
+            defaultValue: https://example.com
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"URL Ref" n2/url
+        '[n2]:urlReference "URL Ref"':
+          data:
+            url: ''
+            useUrlInput: true
+          outgoingConnections:
+            - urlReference->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}

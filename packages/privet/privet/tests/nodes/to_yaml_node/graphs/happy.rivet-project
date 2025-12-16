@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: To YAML
+      nodes:
+        '[n1]:graphInput "Object"':
+          data:
+            id: obj
+            dataType: object
+            defaultValue:
+              name: Rivet
+              features:
+                - chat
+                - graphs
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"To YAML" n2/object
+        '[n2]:toYaml "To YAML"':
+          outgoingConnections:
+            - yaml->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

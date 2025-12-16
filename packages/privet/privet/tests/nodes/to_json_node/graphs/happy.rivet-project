@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: To JSON
+      nodes:
+        '[n1]:graphInput "Object"':
+          data:
+            id: obj
+            dataType: object
+            defaultValue:
+              name: Rivet
+              count: 2
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"To JSON" n2/data
+        '[n2]:toJson "To JSON"':
+          data:
+            indented: true
+          outgoingConnections:
+            - json->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

@@ -39,6 +39,8 @@ class BaseNode:
     def __init__(self, node: ChartNode, context: Dict[str, Any] | None = None) -> None:
         self.node = node
         self.context = context or {}
+        # Common helper so nodes can read configuration without repeatedly reaching into self.node
+        self.data = node.data or {}
 
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
         inputs = inputs or {}

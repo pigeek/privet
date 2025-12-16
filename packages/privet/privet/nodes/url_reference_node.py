@@ -49,4 +49,20 @@ class URLReferenceSchema(NodeSchema):
 @bindschema(schema=URLReferenceSchema)
 class URLReferenceNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.inputs import get_input_or_data
+
+        # Get URL from input or data
+        url = get_input_or_data(self.node.data, inputs, 'url', 'string', 'useUrlInput')
+        if not url:
+            url = ''
+
+        # Create URL reference object
+        return {
+            'urlReference': {
+                'type': 'object',
+                'value': {
+                    'type': 'url_reference',
+                    'url': url,
+                }
+            }
+        }

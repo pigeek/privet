@@ -1,0 +1,64 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Loop Until
+      nodes:
+        '[n1]:graphInput "Start"':
+          data:
+            id: start
+            dataType: number
+          outgoingConnections:
+            - data->"Loop Until" n2/start
+        '[n2]:loopUntil "Loop Until"':
+          data:
+            targetGraph: sub
+            conditionType: inputEqual
+            inputToCheck: out
+            targetValue: done
+            maxIterations: 5
+            useTargetGraphInput: false
+            useMaxIterationsInput: false
+            useInputToCheckInput: false
+            useTargetValueInput: false
+          outgoingConnections:
+            - iteration->"Graph Output" n3/value
+            - completed->"Graph Output" n4/value
+            - out->"Graph Output" n5/value
+        '[n3]:graphOutput "Iters"':
+          data:
+            id: iter
+            dataType: number
+        '[n4]:graphOutput "Completed"':
+          data:
+            id: completed
+            dataType: boolean
+        '[n5]:graphOutput "Out"':
+          data:
+            id: out
+            dataType: any
+      connections: {}
+    sub:
+      metadata:
+        id: sub
+        name: Sub
+      nodes:
+        '[s1]:graphInput "In"':
+          data:
+            id: start
+            dataType: number
+          outgoingConnections:
+            - data->"Text" s2/input
+        '[s2]:text "Text"':
+          data:
+            text: "{{start}}"
+            normalizeLineEndings: true
+          outgoingConnections:
+            - output->"Graph Output" s3/value
+        '[s3]:graphOutput "Out"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

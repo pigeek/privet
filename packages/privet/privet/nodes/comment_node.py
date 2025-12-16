@@ -39,4 +39,5 @@ class CommentSchema(NodeSchema):
 @bindschema(schema=CommentSchema)
 class CommentNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        # Comment nodes do nothing - they're just for documentation
+        return {}

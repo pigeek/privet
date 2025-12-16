@@ -13,6 +13,7 @@ from ..spec_builder import (
     RawShowIf,
     NodeSchema,
 )
+from ..utils import coerce_type_optional, unwrap_data_value
 
 class ChatLoopSchema(NodeSchema):
     NODE_TYPE = 'chatLoop'
@@ -59,4 +60,34 @@ class ChatLoopSchema(NodeSchema):
 @bindschema(schema=ChatLoopSchema)
 class ChatLoopNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        system_prompt = coerce_type_optional(inputs.get("systemPrompt"), "string")
+        prompt_val = unwrap_data_value(inputs.get("prompt"))
+        messages = prompt_val if isinstance(prompt_val, list) else ([prompt_val] if prompt_val is not None else [])
+
+        conversation: list[str] = []
+        if system_prompt:
+            conversation.append(f"system: {system_prompt}")
+
+        last_content = ""
+        for raw in messages:
+            msg = unwrap_data_value(raw)
+            if isinstance(msg, dict):
+                role = msg.get("type") or msg.get("role") or "user"
+                content = msg.get("message") or msg.get("content") or ""
+            else:
+                role = "user"
+                content = "" if msg is None else str(msg)
+            last_content = content
+            conversation.append(f"{role}: {content}")
+
+        prompt_hint = data.get("userPrompt") or "Your response:"
+        reply = f"{prompt_hint} {last_content}".strip()
+        conversation.append(f"assistant: {reply}")
+
+        return {
+            "conversation": {"type": "string[]", "value": conversation},
+            "lastMessage": {"type": "string", "value": reply},
+        }

@@ -1,0 +1,46 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: MCP Discovery
+      nodes:
+        '[n1]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+          outgoingConnections:
+            - data->"Discovery" n4/name
+        '[n2]:graphInput "Version"':
+          data:
+            id: version
+            dataType: string
+          outgoingConnections:
+            - data->"Discovery" n4/version
+        '[n3]:graphInput "Server URL"':
+          data:
+            id: serverUrl
+            dataType: string
+          outgoingConnections:
+            - data->"Discovery" n4/serverUrl
+        '[n4]:mcpDiscovery "Discovery"':
+          data:
+            useNameInput: true
+            useVersionInput: true
+            useServerUrlInput: true
+            transportType: http
+            useToolsOutput: true
+            usePromptsOutput: true
+          outgoingConnections:
+            - tools->"Tools" n5/value
+            - prompts->"Prompts" n6/value
+        '[n5]:graphOutput "Tools"':
+          data:
+            id: tools
+            dataType: object[]
+        '[n6]:graphOutput "Prompts"':
+          data:
+            id: prompts
+            dataType: object[]
+      connections: {}

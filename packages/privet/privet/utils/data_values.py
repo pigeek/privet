@@ -97,3 +97,35 @@ def get_default_value(data_type: str | None) -> Any:
     if scalar == "object":
         return {}
     return None
+
+
+def expect_type(value: Optional[Dict[str, Any]], data_type: str) -> Any:
+    """
+    Expect a value to be of a certain type, raising an error if coercion fails.
+    Similar to TypeScript's expectType function.
+    """
+    coerced = coerce_type_optional(value, data_type)
+    if coerced is None and value is not None:
+        raise ValueError(f"Expected value of type {data_type}, but got {value}")
+    return coerced
+
+
+def expect_type_optional(value: Optional[Dict[str, Any]], data_type: str) -> Any:
+    """
+    Expect a value to be of a certain type, returning None if the value is None.
+    Similar to TypeScript's expectTypeOptional function.
+    """
+    if value is None:
+        return None
+    return coerce_type_optional(value, data_type)
+
+
+def coerce_type(value: Optional[Dict[str, Any]], data_type: str) -> Any:
+    """
+    Coerce a value to a certain type, similar to TypeScript's coerceType.
+    This is the non-optional version that always returns a value.
+    """
+    result = coerce_type_optional(value, data_type)
+    if result is None:
+        return get_default_value(data_type)
+    return result

@@ -1,0 +1,22 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Cron
+      nodes:
+        '[n1]:cron "Cron"':
+          data:
+            executeImmediately: true
+            targetGraph: null
+            scheduleType: interval
+            schedule: 5 minutes
+            useTargetGraphInput: false
+          outgoingConnections:
+            - iteration->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: number
+      connections: {}

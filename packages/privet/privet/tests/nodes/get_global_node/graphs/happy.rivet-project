@@ -1,0 +1,37 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Get Global
+      nodes:
+        '[n1]:graphInput "Value"':
+          data:
+            id: val
+            dataType: string
+            defaultValue: shared
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Set Global" n2/value
+        '[n2]:setGlobal "Set Global"':
+          data:
+            id: myVar
+            dataType: string
+            useIdInput: false
+          outgoingConnections:
+            - saved-value->"Get Global" n3/value
+        '[n3]:getGlobal "Get Global"':
+          data:
+            id: myVar
+            dataType: string
+            onDemand: false
+            useIdInput: false
+            wait: false
+          outgoingConnections:
+            - value->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

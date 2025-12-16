@@ -55,4 +55,10 @@ class DelegateToolCallSchema(NodeSchema):
 @bindschema(schema=DelegateToolCallSchema)
 class DelegateToolCallNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        # Minimal passthrough: echo the incoming function-call object
+        call = inputs.get("function-call")
+        message = {"type": "tool", "content": call}
+        return {
+            "output": {"type": "string", "value": str(call)},
+            "message": {"type": "object", "value": message},
+        }

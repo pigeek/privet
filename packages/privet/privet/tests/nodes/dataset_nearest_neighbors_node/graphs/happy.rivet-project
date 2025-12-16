@@ -1,0 +1,91 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Dataset KNN
+      nodes:
+        '[n0]:graphInput "Row A Data"':
+          data:
+            id: data
+            dataType: string[]
+            defaultValue:
+              - rowA
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Append A" n2/data
+        '[n0b]:graphInput "Row B Data"':
+          data:
+            id: data1
+            dataType: string[]
+            defaultValue:
+              - rowB
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Append B" n3/data
+        '[n0c]:graphInput "Embedding A"':
+          data:
+            id: vector
+            dataType: vector
+            defaultValue:
+              - 1
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Append A" n2/embedding
+        '[n0d]:graphInput "Embedding B"':
+          data:
+            id: vector1
+            dataType: vector
+            defaultValue:
+              - 5
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Append B" n3/embedding
+        '[n0e]:graphInput "Query"':
+          data:
+            id: embedding
+            dataType: vector
+            defaultValue:
+              - 0
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"KNN" n4/embedding
+        '[n1]:createDataset "Create"':
+          data:
+            datasetId: dsK
+            datasetName: dsK
+          outgoingConnections:
+            - datasetId_out->"Append A" n2/datasetId
+            - datasetId_out->"Append B" n3/datasetId
+        '[n2]:appendToDataset "Append A"':
+          data:
+            datasetId: ''
+            useDatasetIdInput: true
+          outgoingConnections:
+            - dataset->"KNN" n4/datasetId
+        '[n3]:appendToDataset "Append B"':
+          data:
+            datasetId: ''
+            useDatasetIdInput: true
+          outgoingConnections:
+            - dataset->"KNN" n4/datasetId
+        '[n4]:datasetNearestNeighbors "KNN"':
+          data:
+            datasetId: ''
+            useDatasetIdInput: true
+            k: 1
+            useKInput: false
+          outgoingConnections:
+            - nearestNeighbors->"Graph Output" n5/value
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object[]
+      connections: {}

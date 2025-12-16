@@ -1,0 +1,36 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: IfElse
+      nodes:
+        '[n1]:graphInput "Cond"':
+          data:
+            id: cond
+            dataType: boolean
+          outgoingConnections:
+            - data->"If/Else" n3/if
+        '[n2]:graphInput "TrueVal"':
+          data:
+            id: tval
+            dataType: string
+          outgoingConnections:
+            - data->"If/Else" n3/true
+        '[n4]:graphInput "FalseVal"':
+          data:
+            id: fval
+            dataType: string
+          outgoingConnections:
+            - data->"If/Else" n3/false
+        '[n3]:ifElse "If/Else"':
+          data:
+            unconnectedControlFlowExcluded: false
+          outgoingConnections:
+            - output->"Graph Output" n5/value
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any
+      connections: {}

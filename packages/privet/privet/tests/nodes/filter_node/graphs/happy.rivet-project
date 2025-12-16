@@ -1,0 +1,38 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Filter
+      nodes:
+        '[n1]:graphInput "Values"':
+          data:
+            id: values
+            dataType: any[]
+            defaultValue:
+              - a
+              - b
+              - c
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Filter" n3/array
+        '[n2]:graphInput "Include"':
+          data:
+            id: include
+            dataType: boolean[]
+            defaultValue:
+              - true
+              - false
+              - true
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Filter" n3/include
+        '[n3]:filter "Filter"':
+          outgoingConnections:
+            - filtered->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any[]
+      connections: {}

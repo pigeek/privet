@@ -1,0 +1,34 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Read All Files
+      nodes:
+        '[n1]:graphInput "Path"':
+          data:
+            id: path
+            dataType: string
+            defaultValue: ''
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Read All Files" n2/path
+        '[n2]:readAllFiles "Read All Files"':
+          data:
+            recursive: false
+            usePathInput: true
+            useRecursiveInput: false
+            filterGlobs: []
+            useFilterGlobsInput: false
+            ignores: []
+            useIgnoresInput: false
+            asBinary: false
+            errorOnMissingFile: true
+          outgoingConnections:
+            - files->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object[]
+      connections: {}

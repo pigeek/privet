@@ -1,0 +1,21 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Context
+      nodes:
+        '[n1]:context "Context"':
+          data:
+            id: user
+            dataType: string
+            defaultValue: guest
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

@@ -1,0 +1,30 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: To Tree
+      nodes:
+        '[n1]:graphInput "Objects"':
+          data:
+            id: items
+            dataType: object[]
+            defaultValue:
+              - path: root
+                children:
+                  - path: root/Alpha
+                    children:
+                      - path: root/Alpha/Leaf
+                  - path: root/Beta
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"To Tree" n2/objects
+        '[n2]:toTree "To Tree"':
+          outgoingConnections:
+            - tree->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

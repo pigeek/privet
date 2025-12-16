@@ -1,0 +1,35 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Chat Loop
+      nodes:
+        '[n1]:graphInput "Prompt"':
+          data:
+            id: prompt
+            dataType: string
+          outgoingConnections:
+            - data->"Chat Loop" n3/prompt
+        '[n2]:graphInput "System"':
+          data:
+            id: systemPrompt
+            dataType: string
+          outgoingConnections:
+            - data->"Chat Loop" n3/systemPrompt
+        '[n3]:chatLoop "Chat Loop"':
+          data:
+            userPrompt: "Reply with:"
+          outgoingConnections:
+            - conversation->"Conversation" n4/value
+            - lastMessage->"Last" n5/value
+        '[n4]:graphOutput "Conversation"':
+          data:
+            id: conversation
+            dataType: string[]
+        '[n5]:graphOutput "Last"':
+          data:
+            id: last
+            dataType: string
+      connections: {}

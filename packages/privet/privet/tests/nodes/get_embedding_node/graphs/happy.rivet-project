@@ -1,0 +1,24 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Get Embedding
+      nodes:
+        '[n1]:graphInput "Text"':
+          data:
+            id: text
+            dataType: string
+            defaultValue: abc
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Embed" n2/input
+        '[n2]:getEmbedding "Embed"':
+          outgoingConnections:
+            - embedding->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: vector
+      connections: {}

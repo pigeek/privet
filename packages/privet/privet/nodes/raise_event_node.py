@@ -54,4 +54,20 @@ class RaiseEventSchema(NodeSchema):
 @bindschema(schema=RaiseEventSchema)
 class RaiseEventNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type
+
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        if data.get("useEventNameInput"):
+            event_name = coerce_type(inputs.get("eventName"), "string")
+        else:
+            event_name = str(data.get("eventName") or "")
+
+        event_data = inputs.get("data")
+
+        processor = (self.context or {}).get("processor")
+        if processor and hasattr(processor, "raise_event"):
+            processor.raise_event(event_name, event_data)
+
+        return {"result": event_data if event_data is not None else {"type": "any", "value": None}}

@@ -1,0 +1,24 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Hash
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: input
+            dataType: string
+          outgoingConnections:
+            - data->"Hash" n2/input
+        '[n2]:hash "Hash"':
+          data:
+            algorithm: sha256
+          outgoingConnections:
+            - hash->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

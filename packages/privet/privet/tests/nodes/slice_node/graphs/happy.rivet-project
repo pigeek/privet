@@ -1,0 +1,34 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Slice
+      nodes:
+        '[n1]:graphInput "Array"':
+          data:
+            id: arr
+            dataType: any[]
+            defaultValue:
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Slice" n2/input
+        '[n2]:slice "Slice"':
+          data:
+            start: 1
+            useStartInput: false
+            count: 3
+            useCountInput: false
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any[]
+      connections: {}

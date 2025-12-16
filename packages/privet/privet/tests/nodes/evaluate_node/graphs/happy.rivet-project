@@ -1,0 +1,31 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Evaluate
+      nodes:
+        '[n1]:evaluate "Eval"':
+          data:
+            operation: '+'
+            useOperationInput: false
+          outgoingConnections:
+            - output->"Graph Output" n4/value
+        '[n2]:graphInput "A"':
+          data:
+            id: a
+            dataType: number
+          outgoingConnections:
+            - data->"Eval" n1/a
+        '[n3]:graphInput "B"':
+          data:
+            id: b
+            dataType: number
+          outgoingConnections:
+            - data->"Eval" n1/b
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: number
+      connections: {}

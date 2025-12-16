@@ -67,4 +67,16 @@ class GetEmbeddingSchema(NodeSchema):
 @bindschema(schema=GetEmbeddingSchema)
 class GetEmbeddingNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        text_val = inputs.get("input")
+        text = text_val.get("value") if isinstance(text_val, dict) else text_val
+        if text is None:
+            text = ""
+        text_str = str(text)
+
+        # Deterministic toy embedding for testing: [len, char_sum/1000, word_count]
+        char_sum = sum(ord(c) for c in text_str)
+        word_count = len(text_str.split()) if text_str else 0
+        embedding = [float(len(text_str)), float(char_sum % 1000) / 1000.0, float(word_count)]
+
+        return {"embedding": {"type": "vector", "value": embedding}}

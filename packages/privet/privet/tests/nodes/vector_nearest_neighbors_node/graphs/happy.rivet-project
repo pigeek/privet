@@ -1,0 +1,73 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Vector KNN
+      nodes:
+        '[n0]:graphInput "VectorA"':
+          data:
+            id: vector
+            dataType: vector
+            defaultValue:
+              - 1
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Store" n2/vector
+        '[n0b]:graphInput "VectorB"':
+          data:
+            id: vector1
+            dataType: vector
+            defaultValue:
+              - 2
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Store2" n2b/vector
+        '[n0c]:graphInput "Data"':
+          data:
+            id: data
+            dataType: any
+            defaultValue: a
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Store" n2/data
+            - data->"Store2" n2b/data
+        '[n1]:graphInput "Query"':
+          data:
+            id: query
+            dataType: vector
+            defaultValue:
+              - 0
+              - 0
+              - 0
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"KNN" n3/vector
+        '[n2]:vectorStore "Store"':
+          data:
+            collectionId: coll
+            useCollectionIdInput: false
+          outgoingConnections: []
+        '[n2b]:vectorStore "Store2"':
+          data:
+            collectionId: coll
+            useCollectionIdInput: false
+          outgoingConnections: []
+        '[n3]:vectorNearestNeighbors "KNN"':
+          data:
+            collectionId: coll
+            useCollectionIdInput: false
+            k: 2
+            useKInput: false
+          outgoingConnections:
+            - results->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any[]
+      connections: {}

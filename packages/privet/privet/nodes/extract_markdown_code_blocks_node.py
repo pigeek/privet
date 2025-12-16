@@ -58,4 +58,40 @@ class ExtractMarkdownCodeBlocksSchema(NodeSchema):
 @bindschema(schema=ExtractMarkdownCodeBlocksSchema)
 class ExtractMarkdownCodeBlocksNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import re
+        from ..utils.data_values import expect_type
+
+        input_string = expect_type(inputs.get('input'), 'string')
+
+        # Match markdown code blocks: ```language\ncode```
+        regex = re.compile(r'```(\w*)\n([\s\S]*?)```')
+        matches = regex.finditer(input_string)
+
+        first_block = None
+        all_blocks = []
+        languages = []
+
+        for match in matches:
+            language = match.group(1) or ''
+            block = match.group(2) or ''
+
+            if first_block is None:
+                first_block = block
+
+            all_blocks.append(block)
+            languages.append(language)
+
+        return {
+            'firstBlock': {
+                'type': 'control-flow-excluded' if first_block is None else 'string',
+                'value': first_block,
+            },
+            'allBlocks': {
+                'type': 'string[]',
+                'value': all_blocks,
+            },
+            'languages': {
+                'type': 'string[]',
+                'value': languages,
+            },
+        }

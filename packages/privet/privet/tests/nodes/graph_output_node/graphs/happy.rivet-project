@@ -1,0 +1,19 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Graph Input/Output Echo
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: in
+            dataType: string
+          outgoingConnections:
+            - data->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

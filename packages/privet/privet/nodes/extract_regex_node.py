@@ -73,4 +73,57 @@ class ExtractRegexSchema(NodeSchema):
 @bindschema(schema=ExtractRegexSchema)
 class ExtractRegexNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import re
+        from ..utils.data_values import expect_type, expect_type_optional
+
+        input_string = expect_type(inputs.get('input'), 'string')
+        data = self.node.data or {}
+        regex_pattern = expect_type_optional(inputs.get('regex'), 'string') or data.get('regex', '([a-zA-Z]+)')
+
+        # Determine flags
+        flags = re.MULTILINE if data.get('multilineMode') else 0
+
+        try:
+            regex = re.compile(regex_pattern, flags)
+        except re.error as e:
+            if data.get('errorOnFailed'):
+                raise ValueError(f"Invalid regex pattern: {regex_pattern}") from e
+            return {
+                'succeeded': {'type': 'boolean', 'value': False},
+                'failed': {'type': 'boolean', 'value': True},
+            }
+
+        matches_list = []
+        first_match = None
+
+        for match in regex.finditer(input_string):
+            if first_match is None:
+                first_match = match
+            # Collect all matches from first capture group
+            if len(match.groups()) > 0 and match.group(1):
+                matches_list.append(match.group(1))
+
+        if not first_match:
+            if data.get('errorOnFailed'):
+                raise ValueError(f"No match found for regex {regex_pattern}")
+            return {
+                'succeeded': {'type': 'boolean', 'value': False},
+                'failed': {'type': 'boolean', 'value': True},
+            }
+
+        # Build output with all capture groups from first match
+        output = {}
+        for i in range(1, len(first_match.groups()) + 1):
+            output[f'output{i}'] = {
+                'type': 'string',
+                'value': first_match.group(i) or '',
+            }
+
+        output['matches'] = {
+            'type': 'string[]',
+            'value': matches_list,
+        }
+        output['succeeded'] = {'type': 'boolean', 'value': True}
+        output['failed'] = {'type': 'boolean', 'value': False}
+
+        return output

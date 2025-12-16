@@ -59,4 +59,23 @@ class WaitForEventSchema(NodeSchema):
 @bindschema(schema=WaitForEventSchema)
 class WaitForEventNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type
+
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        if data.get("useEventNameInput"):
+            event_name = coerce_type(inputs.get("eventName"), "string")
+        else:
+            event_name = str(data.get("eventName") or "")
+
+        processor = (self.context or {}).get("processor")
+        if not processor or not hasattr(processor, "wait_event"):
+            raise RuntimeError("Processor event handling is unavailable.")
+
+        event_data = await processor.wait_event(event_name)
+
+        return {
+            "outputData": inputs.get("inputData"),
+            "eventData": event_data,
+        }

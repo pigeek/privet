@@ -60,4 +60,19 @@ class ExternalCallSchema(NodeSchema):
 @bindschema(schema=ExternalCallSchema)
 class ExternalCallNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+        func_name = inputs.get("functionName") if data.get("useFunctionNameInput") else data.get("functionName")
+        if isinstance(func_name, dict):
+            func_name = func_name.get("value")
+
+        args_val = inputs.get("arguments")
+        args = args_val.get("value") if isinstance(args_val, dict) else args_val
+        if not isinstance(args, list):
+            args = []
+
+        result = {"type": "any", "value": {"function": func_name, "args": args}}
+        outputs = {"result": result}
+        if data.get("useErrorOutput"):
+            outputs["error"] = {"type": "control-flow-excluded", "value": None}
+        return outputs

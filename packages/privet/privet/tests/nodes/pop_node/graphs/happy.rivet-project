@@ -1,0 +1,34 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Pop
+      nodes:
+        '[n1]:graphInput "Array"':
+          data:
+            id: arr
+            dataType: any[]
+            defaultValue:
+              - 1
+              - 2
+              - 3
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Pop" n2/array
+        '[n2]:pop "Pop"':
+          data:
+            fromFront: false
+          outgoingConnections:
+            - lastItem->"Item" n3/value
+            - restOfArray->"Rest" n4/value
+        '[n3]:graphOutput "Item"':
+          data:
+            id: item
+            dataType: any
+        '[n4]:graphOutput "Rest"':
+          data:
+            id: rest
+            dataType: any[]
+      connections: {}

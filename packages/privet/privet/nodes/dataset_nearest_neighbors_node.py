@@ -59,4 +59,50 @@ class KNNDatasetSchema(NodeSchema):
 @bindschema(schema=KNNDatasetSchema)
 class KNNDatasetNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import math
+
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        dataset_id = inputs.get("datasetId") if data.get("useDatasetIdInput") else data.get("datasetId")
+        if isinstance(dataset_id, dict):
+            candidate = dataset_id.get("value")
+            if isinstance(candidate, dict) and "id" in candidate:
+                dataset_id = candidate.get("id")
+            elif candidate is not None:
+                dataset_id = candidate
+            elif "id" in dataset_id:
+                dataset_id = dataset_id.get("id")
+        dataset_id = str(dataset_id or "")
+
+        k = inputs.get("k") if data.get("useKInput") else data.get("k", 5)
+        if isinstance(k, dict):
+            k = k.get("value")
+        k = int(k or 5)
+
+        query_val = inputs.get("embedding")
+        query = query_val.get("value") if isinstance(query_val, dict) else query_val or []
+
+        datasets = (self.context or {}).get("datasets") or {}
+        ds = datasets.get(dataset_id)
+        if ds is None:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+
+        rows = ds.get("rows", [])
+
+        def l2(a, b):
+            try:
+                return math.sqrt(sum((float(x) - float(y)) ** 2 for x, y in zip(a, b)))
+            except Exception:
+                return math.inf
+
+        scored = []
+        for row in rows:
+            emb = row.get("embedding")
+            if isinstance(emb, dict):
+                emb = emb.get("value")
+            dist = l2(query, emb or [])
+            scored.append({"row": row, "distance": dist})
+        scored.sort(key=lambda x: x["distance"])
+
+        return {"nearestNeighbors": {"type": "object[]", "value": scored[:k]}}

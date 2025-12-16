@@ -1,0 +1,29 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Coalesce
+      nodes:
+        '[n1]:graphInput "First"':
+          data:
+            id: a
+            dataType: string
+          outgoingConnections:
+            - data->"Coalesce" n3/input1
+        '[n2]:graphInput "Second"':
+          data:
+            id: b
+            dataType: string
+          outgoingConnections:
+            - data->"Coalesce" n3/input2
+        '[n3]:coalesce "Coalesce"':
+          data: {}
+          outgoingConnections:
+            - output->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

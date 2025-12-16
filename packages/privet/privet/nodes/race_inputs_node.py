@@ -51,4 +51,19 @@ class RaceInputsSchema(NodeSchema):
 @bindschema(schema=RaceInputsSchema)
 class RaceInputsNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        # Find the first input that is not control-flow-excluded
+        for key in sorted(inputs.keys()):
+            if key.startswith('input'):
+                value = inputs[key]
+                if value is not None and value.get('type') != 'control-flow-excluded':
+                    return {
+                        'result': value
+                    }
+
+        # No valid input found
+        return {
+            'result': {
+                'type': 'control-flow-excluded',
+                'value': None,
+            }
+        }

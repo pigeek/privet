@@ -1,0 +1,24 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Tool
+      nodes:
+        '[n1]:gptFunction "Tool"':
+          data:
+            name: doThing
+            description: Does something
+            schema: '{ "type": "object", "properties": {} }'
+            useNameInput: false
+            useDescriptionInput: false
+            useSchemaInput: false
+            strict: true
+          outgoingConnections:
+            - function->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: gpt-function
+      connections: {}

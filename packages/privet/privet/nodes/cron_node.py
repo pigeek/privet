@@ -68,4 +68,10 @@ class CronSchema(NodeSchema):
 @bindschema(schema=CronSchema)
 class CronNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        # This Python executor does not schedule; it outputs an immediate iteration.
+        return {
+            "output": {"type": "any", "value": None},
+            "iteration": {"type": "number", "value": 1},
+            "completed": {"type": "boolean", "value": True},
+            "nextRun": {"type": "string", "value": ""},
+        }

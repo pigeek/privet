@@ -1,0 +1,25 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Text
+      nodes:
+        '[n1]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+          outgoingConnections:
+            - data->"Text" n2/name
+        '[n2]:text "Text"':
+          data:
+            text: "Hello {{name}}"
+            normalizeLineEndings: true
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

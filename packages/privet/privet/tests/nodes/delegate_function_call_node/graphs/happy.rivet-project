@@ -1,0 +1,27 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Delegate Tool Call
+      nodes:
+        '[n1]:graphInput "Call"':
+          data:
+            id: call
+            dataType: object
+            defaultValue:
+              functionCall:
+                name: test
+                arguments: '{}'
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Delegate" n2/function-call
+        '[n2]:delegateFunctionCall "Delegate"':
+          outgoingConnections:
+            - message->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}

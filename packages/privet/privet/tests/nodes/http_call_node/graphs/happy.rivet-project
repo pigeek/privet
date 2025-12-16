@@ -1,0 +1,25 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: HTTP Call
+      nodes:
+        '[n1]:httpCall "HTTP"':
+          data:
+            method: GET
+            url: https://example.com
+            useMethodInput: false
+            useUrlInput: false
+            useHeadersInput: false
+            useBodyInput: false
+            errorOnNon200: false
+            isBinaryOutput: false
+          outgoingConnections:
+            - json->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}

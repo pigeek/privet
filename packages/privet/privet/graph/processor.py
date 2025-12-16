@@ -59,6 +59,8 @@ class GraphProcessor:
         self._children: Set["GraphProcessor"] = set()
         self._parent: Optional["GraphProcessor"] = None
         self._visited_nodes: Set[NodeId] = set()  # Track processed nodes like TypeScript
+        self._event_waiters: Dict[str, List[asyncio.Future]] = {}
+        self._event_queue: Dict[str, List[Any]] = {}  # Deliver events raised before waiters subscribe
 
     __hash__ = object.__hash__
 
@@ -145,6 +147,60 @@ class GraphProcessor:
             self._process_graph_task = None
         await self.emit("graphAbort", {"successful": successful, "graph": self.graph, "error": error})
         await self.emit("abort", {"successful": successful, "error": error})
+
+    def _get_root_processor(self) -> "GraphProcessor":
+        """Walk up parent pointers to find the root processor."""
+        processor: "GraphProcessor" = self
+        while processor._parent:
+            processor = processor._parent
+        return processor
+
+    def raise_event(self, event_name: str, data: Any) -> None:
+        """Raise a user event on the root processor and propagate to children."""
+        root = self._get_root_processor()
+        root._dispatch_event(event_name, data)
+
+    def _dispatch_event(self, event_name: str, data: Any) -> None:
+        """Resolve any waiters for this event and propagate to children."""
+        waiters = list(self._event_waiters.get(event_name, []))
+        delivered = False
+        for fut in waiters:
+            if fut.done():
+                continue
+            try:
+                fut.set_result(data)
+                delivered = True
+            except Exception:
+                continue
+        # If no one was waiting, queue it for the next wait_event call
+        if not delivered:
+            self._event_queue.setdefault(event_name, []).append(data)
+
+        # Propagate to child processors (e.g., subgraphs)
+        for child in list(self._children):
+            child._dispatch_event(event_name, data)
+
+    async def wait_event(self, event_name: str) -> Any:
+        """Wait for a user event raised via RaiseEventNode or host."""
+        loop = asyncio.get_running_loop()
+        # First, consume any queued events for this name
+        queued = self._event_queue.get(event_name)
+        if queued:
+            return queued.pop(0)
+
+        future: asyncio.Future = loop.create_future()
+        self._event_waiters.setdefault(event_name, []).append(future)
+
+        try:
+            if self._aborted:
+                raise asyncio.CancelledError("Processor aborted")
+            return await future
+        finally:
+            waiters = self._event_waiters.get(event_name)
+            if waiters and future in waiters:
+                waiters.remove(future)
+                if not waiters:
+                    self._event_waiters.pop(event_name, None)
 
     async def _wait_until_unpaused(self) -> None:
         while self._paused and not self._aborted:
@@ -243,6 +299,8 @@ class GraphProcessor:
 
             "processor": self, # Allow nodes to access the processor directly
             "settings": self.settings or {},
+            "raise_event": self.raise_event,
+            "wait_event": self.wait_event,
 
             "create_subprocessor": lambda gid, shared=None: GraphProcessor(
 

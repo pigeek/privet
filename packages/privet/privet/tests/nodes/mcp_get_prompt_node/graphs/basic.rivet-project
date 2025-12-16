@@ -1,0 +1,53 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: MCP Get Prompt
+      nodes:
+        '[n1]:graphInput "Prompt Name"':
+          data:
+            id: promptName
+            dataType: string
+          outgoingConnections:
+            - data->"Get Prompt" n4/promptName
+        '[n2]:graphInput "Prompt Args"':
+          data:
+            id: promptArguments
+            dataType: object
+          outgoingConnections:
+            - data->"Get Prompt" n4/promptArguments
+        '[n3]:graphInput "Server URL"':
+          data:
+            id: serverUrl
+            dataType: string
+          outgoingConnections:
+            - data->"Get Prompt" n4/serverUrl
+        '[n5]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+          outgoingConnections:
+            - data->"Get Prompt" n4/name
+        '[n6]:graphInput "Version"':
+          data:
+            id: version
+            dataType: string
+          outgoingConnections:
+            - data->"Get Prompt" n4/version
+        '[n4]:mcpGetPrompt "Get Prompt"':
+          data:
+            usePromptNameInput: true
+            usePromptArgumentsInput: true
+            useServerUrlInput: true
+            transportType: http
+            useNameInput: true
+            useVersionInput: true
+          outgoingConnections:
+            - prompt->"Prompt" n7/value
+        '[n7]:graphOutput "Prompt"':
+          data:
+            id: prompt
+            dataType: object
+      connections: {}

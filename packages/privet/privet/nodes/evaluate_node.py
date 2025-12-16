@@ -60,4 +60,62 @@ class EvaluateSchema(NodeSchema):
 @bindschema(schema=EvaluateSchema)
 class EvaluateNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import coerce_type, coerce_type_optional
+
+        # Get operation
+        operation = self.node.data.get('operation', '+')
+        if self.node.data.get('useOperationInput'):
+            op_input = inputs.get('operation')
+            if op_input:
+                operation = coerce_type(op_input, 'string')
+
+        # Get input values
+        input_a = coerce_type_optional(inputs.get('a'), 'number')
+
+        # Handle unary operations
+        unary_operations = ['abs', 'negate']
+        if operation in unary_operations:
+            if input_a is None:
+                raise ValueError("Missing input A")
+
+            if operation == 'abs':
+                result = abs(input_a)
+            elif operation == 'negate':
+                result = -input_a
+            else:
+                result = 0
+
+            return {
+                'output': {
+                    'type': 'number',
+                    'value': result,
+                }
+            }
+
+        # Handle binary operations
+        input_b = coerce_type_optional(inputs.get('b'), 'number')
+
+        if input_a is None or input_b is None:
+            raise ValueError("Missing inputs")
+
+        if operation == '+':
+            result = input_a + input_b
+        elif operation == '-':
+            result = input_a - input_b
+        elif operation == '*':
+            result = input_a * input_b
+        elif operation == '/':
+            result = input_a / input_b
+        elif operation == '^':
+            result = input_a ** input_b
+        elif operation == '%':
+            result = input_a % input_b
+        else:
+            result = 0
+
+        return {
+            'output': {
+                'type': 'number',
+                'value': result,
+            }
+        }

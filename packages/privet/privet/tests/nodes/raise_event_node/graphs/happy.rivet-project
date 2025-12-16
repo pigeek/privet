@@ -1,0 +1,36 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Raise/Wait
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: msg
+            dataType: string
+          outgoingConnections:
+            - data->"Raise Event" n2/data
+        '[n2]:raiseEvent "Raise Event"':
+          data:
+            eventName: ping
+            useEventNameInput: false
+          outgoingConnections:
+            - result->"Wait For Event" n3/inputData
+        '[n3]:waitForEvent "Wait For Event"':
+          data:
+            eventName: ping
+            useEventNameInput: false
+          outgoingConnections:
+            - outputData->"Graph Output" n4/value
+            - eventData->"Graph Output" n5/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any
+        '[n5]:graphOutput "Graph Output"':
+          data:
+            id: event
+            dataType: any
+      connections: {}

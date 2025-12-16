@@ -1,0 +1,29 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Prompt
+      nodes:
+        '[n1]:prompt "Prompt"':
+          data:
+            type: user
+            useTypeInput: false
+            promptText: "Hello {{name}}"
+            enableFunctionCall: false
+            computeTokenCount: false
+            isCacheBreakpoint: false
+          outgoingConnections:
+            - output->"Graph Output" n3/value
+        '[n2]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+          outgoingConnections:
+            - data->"Prompt" n1/name
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: chat-message
+      connections: {}

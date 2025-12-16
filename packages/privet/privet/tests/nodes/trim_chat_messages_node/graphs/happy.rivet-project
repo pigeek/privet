@@ -1,0 +1,35 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Trim Chat Messages
+      nodes:
+        '[n1]:graphInput "Messages"':
+          data:
+            id: msgs
+            dataType: chat-message[]
+            defaultValue:
+              - type: user
+                message:
+                  - hello
+              - type: assistant
+                message:
+                  - this is a very long message that should push us over the token limit
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Trim" n2/input
+        '[n2]:trimChatMessages "Trim"':
+          data:
+            maxTokenCount: 40
+            removeFromBeginning: true
+            useMaxTokenCountInput: false
+            useRemoveFromBeginningInput: false
+          outgoingConnections:
+            - trimmed->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: chat-message[]
+      connections: {}

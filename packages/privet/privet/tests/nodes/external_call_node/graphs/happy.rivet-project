@@ -1,0 +1,20 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: External Call
+      nodes:
+        '[n1]:externalCall "External"':
+          data:
+            functionName: ping
+            useFunctionNameInput: false
+            useErrorOutput: false
+          outgoingConnections:
+            - result->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any
+      connections: {}

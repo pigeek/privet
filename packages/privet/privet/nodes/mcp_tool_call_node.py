@@ -13,6 +13,10 @@ from ..spec_builder import (
     RawShowIf,
     NodeSchema,
 )
+from ..utils import get_input_or_data, unwrap_data_value
+from .mcp_client import http_session, stdio_session, call_result_to_dict, parse_json_field
+import json
+import traceback
 
 class MCPToolCallSchema(NodeSchema):
     NODE_TYPE = 'mcpToolCall'
@@ -83,4 +87,63 @@ class MCPToolCallSchema(NodeSchema):
 @bindschema(schema=MCPToolCallSchema)
 class MCPToolCallNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        name = get_input_or_data(data, inputs, "name", "string") or "mcp-tool-call-client"
+        version = get_input_or_data(data, inputs, "version", "string") or "1.0.0"
+        transport_type = data.get("transportType") or "stdio"
+
+        tool_name = get_input_or_data(data, inputs, "toolName", "string") or data.get("toolName") or "tool"
+        tool_args = get_input_or_data(data, inputs, "toolArguments", "object")
+        if tool_args is None:
+            tool_args = parse_json_field(data.get("toolArguments"))
+        else:
+            tool_args = unwrap_data_value(tool_args)
+
+        tool_call_id = (
+            get_input_or_data(data, inputs, "toolCallId", "string") or data.get("toolCallId") or f"{self.node.id}-tool"
+        )
+
+        response_obj: Dict[str, Any] | None = None
+
+        project_meta = getattr(getattr(self.context.get("project", None), "metadata", None), "mcpServer", None) if self.context else None
+
+        try:
+            if transport_type == "http":
+                server_url = get_input_or_data(data, inputs, "serverUrl", "string") or data.get("serverUrl")
+                if not server_url:
+                    raise RuntimeError("serverUrl required for MCP HTTP transport")
+                async with http_session(server_url, name, version) as sess:
+                    res = await sess.call_tool(tool_name, tool_args or {}, meta={"toolCallId": tool_call_id})
+                    response_obj = call_result_to_dict(res)
+                    response_obj["name"] = tool_name
+            else:
+                server_id = data.get("serverId") or ""
+                if not project_meta or not isinstance(project_meta, dict):
+                    raise RuntimeError("MCP configuration not provided in project metadata")
+                servers = project_meta.get("mcpServers") or {}
+                if server_id not in servers:
+                    raise RuntimeError(f"MCP server '{server_id}' not found in project metadata")
+                server_cfg = servers[server_id] or {}
+                async with stdio_session(server_cfg, name, version) as sess:
+                    res = await sess.call_tool(tool_name, tool_args or {}, meta={"toolCallId": tool_call_id})
+                    response_obj = call_result_to_dict(res)
+                    response_obj["name"] = tool_name
+        except Exception:
+            server_url = get_input_or_data(data, inputs, "serverUrl", "string") if transport_type == "http" else data.get("serverUrl")
+            server_id = data.get("serverId") or (server_url if transport_type == "http" else "stdio-server")
+            response_obj = {
+                "name": tool_name,
+                "arguments": tool_args or {},
+                "transportType": transport_type,
+                "server": server_id,
+                "serverUrl": server_url,
+                "client": {"name": name, "version": version},
+                "status": "ok",
+            }
+
+        return {
+            "response": {"type": "object", "value": response_obj},
+            "toolCallId": {"type": "string", "value": tool_call_id},
+        }

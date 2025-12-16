@@ -72,4 +72,25 @@ class VectorStoreSchema(NodeSchema):
 @bindschema(schema=VectorStoreSchema)
 class VectorStoreNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        collection_id = inputs.get("collectionId") if data.get("useCollectionIdInput") else data.get("collectionId")
+        if isinstance(collection_id, dict):
+            collection_id = collection_id.get("value")
+        collection_id = collection_id or "default"
+
+        vector_val = inputs.get("vector")
+        vector = vector_val.get("value") if isinstance(vector_val, dict) else vector_val
+        payload = inputs.get("data")
+        entry_id = inputs.get("id")
+        if isinstance(entry_id, dict):
+            entry_id = entry_id.get("value")
+        if entry_id is None:
+            entry_id = str(int(len((self.context or {}).get("vector_store", {}).get(collection_id, []))))
+
+        store = (self.context or {}).setdefault("vector_store", {})
+        collection = store.setdefault(collection_id, [])
+        collection.append({"id": entry_id, "vector": vector, "data": payload})
+
+        return {"complete": {"type": "boolean", "value": True}}

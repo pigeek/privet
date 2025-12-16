@@ -43,4 +43,6 @@ class GetAllDatasetsSchema(NodeSchema):
 @bindschema(schema=GetAllDatasetsSchema)
 class GetAllDatasetsNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        datasets = (self.context or {}).get("datasets") or {}
+        listing = [{"id": did, "name": ds.get("name"), "rowCount": len(ds.get("rows", []))} for did, ds in datasets.items()]
+        return {"datasets": {"type": "object[]", "value": listing}}

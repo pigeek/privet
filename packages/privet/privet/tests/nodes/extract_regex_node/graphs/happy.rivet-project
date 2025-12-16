@@ -1,0 +1,42 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Extract Regex
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: input
+            dataType: string
+          outgoingConnections:
+            - data->"Extract Regex" n2/input
+        '[n2]:extractRegex "Extract Regex"':
+          data:
+            regex: "Hello (\\w+)!"
+            useRegexInput: false
+            errorOnFailed: false
+            multilineMode: false
+          outgoingConnections:
+            - matches->"Graph Output" n3/value
+            - succeeded->"Graph Output" n4/value
+            - failed->"Graph Output" n5/value
+            - output1->"Graph Output" n6/value
+        '[n3]:graphOutput "Matches"':
+          data:
+            id: matches
+            dataType: string[]
+        '[n4]:graphOutput "Succeeded"':
+          data:
+            id: succeeded
+            dataType: boolean
+        '[n5]:graphOutput "Failed"':
+          data:
+            id: failed
+            dataType: boolean
+        '[n6]:graphOutput "Output1"':
+          data:
+            id: output1
+            dataType: string
+      connections: {}

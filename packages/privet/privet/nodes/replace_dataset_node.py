@@ -54,4 +54,23 @@ class ReplaceDatasetSchema(NodeSchema):
 @bindschema(schema=ReplaceDatasetSchema)
 class ReplaceDatasetNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        dataset_id = inputs.get("datasetId") if data.get("useDatasetIdInput") else data.get("datasetId")
+        if isinstance(dataset_id, dict):
+            dataset_id = dataset_id.get("value")
+        dataset_id = str(dataset_id or "")
+
+        datasets = (self.context or {}).setdefault("datasets", {})
+        ds = datasets.setdefault(dataset_id, {"id": dataset_id, "rows": []})
+
+        new_rows = inputs.get("data")
+        if isinstance(new_rows, dict):
+            new_rows = new_rows.get("value")
+        if new_rows is None:
+            new_rows = []
+
+        ds["rows"] = new_rows
+
+        return {"dataset": {"type": "object[]", "value": ds["rows"]}}

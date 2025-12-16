@@ -67,4 +67,36 @@ class VectorKNNSchema(NodeSchema):
 @bindschema(schema=VectorKNNSchema)
 class VectorKNNNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import math
+
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        vector_val = inputs.get("vector")
+        query = vector_val.get("value") if isinstance(vector_val, dict) else vector_val or []
+
+        collection_id = inputs.get("collectionId") if data.get("useCollectionIdInput") else data.get("collectionId")
+        if isinstance(collection_id, dict):
+            collection_id = collection_id.get("value")
+        collection_id = collection_id or "default"
+
+        k = inputs.get("k") if data.get("useKInput") else data.get("k", 10)
+        if isinstance(k, dict):
+            k = k.get("value")
+        k = int(k or 10)
+
+        store = (self.context or {}).get("vector_store") or {}
+        collection = store.get(collection_id) or []
+
+        def l2(a, b):
+            try:
+                return math.sqrt(sum((float(x) - float(y)) ** 2 for x, y in zip(a, b)))
+            except Exception:
+                return math.inf
+
+        scored = []
+        for entry in collection:
+            dist = l2(query, entry.get("vector") or [])
+            scored.append({"id": entry.get("id"), "data": entry.get("data"), "distance": dist})
+        scored.sort(key=lambda x: x["distance"])
+        return {"results": {"type": "any[]", "value": scored[:k]}}

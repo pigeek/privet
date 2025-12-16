@@ -1,0 +1,46 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Call Graph
+      nodes:
+        '[n0]:graphInput "Inputs"':
+          data:
+            id: inputs
+            dataType: object
+          outgoingConnections:
+            - data->"Call Graph" n2/inputs
+        '[n1]:graphReference "Graph Ref"':
+          data:
+            graphId: sub
+            useGraphIdOrNameInput: false
+          outgoingConnections:
+            - graph->"Call Graph" n2/graph
+        '[n2]:callGraph "Call Graph"':
+          data:
+            useErrorOutput: false
+          outgoingConnections:
+            - outputs->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: object
+      connections: {}
+    sub:
+      metadata:
+        id: sub
+        name: Sub Graph
+      nodes:
+        '[s1]:graphInput "Input"':
+          data:
+            id: msg
+            dataType: string
+          outgoingConnections:
+            - data->"Output" s2/value
+        '[s2]:graphOutput "Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

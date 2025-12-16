@@ -47,4 +47,10 @@ class PlayAudioSchema(NodeSchema):
 @bindschema(schema=PlayAudioSchema)
 class PlayAudioNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        from ..utils.data_values import expect_type
+
+        inputs = inputs or {}
+
+        audio_value = expect_type(inputs.get("data"), "audio")
+        # In tests, just echo the audio back
+        return {"data": {"type": "audio", "value": audio_value}}

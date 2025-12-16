@@ -1,0 +1,19 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Boolean
+      nodes:
+        '[n1]:boolean "Boolean"':
+          data:
+            value: true
+            useValueInput: false
+          outgoingConnections:
+            - value->"Graph Output" n2/value
+        '[n2]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: boolean
+      connections: {}

@@ -1,0 +1,28 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Read File
+      nodes:
+        '[n1]:graphInput "Path"':
+          data:
+            id: path
+            dataType: string
+            defaultValue: ''
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Read File" n2/path
+        '[n2]:readFile "Read File"':
+          data:
+            asBinary: false
+            usePathInput: true
+            errorOnMissingFile: true
+          outgoingConnections:
+            - content->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

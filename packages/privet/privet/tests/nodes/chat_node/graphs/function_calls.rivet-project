@@ -1,0 +1,37 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Chat Functions
+      nodes:
+        '[n1]:graphInput "Prompt"':
+          data:
+            id: prompt
+            dataType: string
+          outgoingConnections:
+            - data->"Chat" n3/prompt
+        '[n2]:graphInput "Functions"':
+          data:
+            id: functions
+            dataType: object[]
+          outgoingConnections:
+            - data->"Chat" n3/functions
+        '[n3]:chat "Chat"':
+          data:
+            enableFunctionUse: true
+            parallelFunctionCalling: true
+            numberOfChoices: 2
+          outgoingConnections:
+            - response->"Response" n4/value
+            - function-calls->"Calls" n5/value
+        '[n4]:graphOutput "Response"':
+          data:
+            id: resp
+            dataType: string[]
+        '[n5]:graphOutput "Calls"':
+          data:
+            id: calls
+            dataType: object[]
+      connections: {}

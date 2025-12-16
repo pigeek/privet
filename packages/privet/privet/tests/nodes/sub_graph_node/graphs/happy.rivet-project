@@ -1,0 +1,44 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Subgraph Caller
+      nodes:
+        '[n1]:subGraph "Subgraph"':
+          data:
+            graphId: child
+            useErrorOutput: false
+            inputData: {}
+          outgoingConnections:
+            - output1->"Graph Output" n3/value
+        '[n2]:graphInput "Message"':
+          data:
+            id: msg
+            dataType: string
+            defaultValue: Hello
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Subgraph" n1/input1
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}
+    child:
+      metadata:
+        id: child
+        name: Child Graph
+      nodes:
+        '[c1]:graphInput "Child Input"':
+          data:
+            id: msg
+            dataType: string
+          outgoingConnections:
+            - data->"Child Output" c2/value
+        '[c2]:graphOutput "Child Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

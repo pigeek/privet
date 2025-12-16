@@ -1,0 +1,39 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Code Node
+      nodes:
+        '[n1]:graphInput "A"':
+          data:
+            id: a
+            dataType: string
+            defaultValue: first
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Code" n3/input1
+        '[n2]:graphInput "B"':
+          data:
+            id: b
+            dataType: string
+            defaultValue: second
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Code" n3/input2
+        '[n3]:code "Code"':
+          data:
+            inputNames:
+              - input1
+              - input2
+            outputNames:
+              - output1
+            code: 'return { output1: inputs.input1 };'
+          outgoingConnections:
+            - output1->"Graph Output" n4/value
+        '[n4]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: any
+      connections: {}

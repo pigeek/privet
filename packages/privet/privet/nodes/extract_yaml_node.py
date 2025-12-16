@@ -71,4 +71,88 @@ class ExtractYAMLSchema(NodeSchema):
 @bindschema(schema=ExtractYAMLSchema)
 class ExtractYAMLNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        import re
+        import yaml
+        from jsonpath_ng import parse as jsonpath_parse
+        from ..utils.data_values import expect_type, coerce_type_optional
+
+        input_string = expect_type(inputs.get('input'), 'string')
+        data = self.node.data or {}
+
+        # Get root property name from input or data
+        root_property_name = (
+            coerce_type_optional(inputs.get('rootPropertyName'), 'string')
+            if data.get('useRootPropertyNameInput')
+            else data.get('rootPropertyName', 'yamlDocument')
+        )
+
+        # Get object path from input or data
+        object_path = (
+            coerce_type_optional(inputs.get('objectPath'), 'string')
+            if data.get('useObjectPathInput')
+            else data.get('objectPath')
+        )
+
+        # Find the root property in the text
+        pattern = re.compile(f'^{re.escape(root_property_name)}:', re.MULTILINE)
+        match = pattern.search(input_string)
+
+        if not match:
+            return {
+                'noMatch': {'type': 'string', 'value': input_string},
+                'output': {'type': 'control-flow-excluded', 'value': None},
+                'matches': {'type': 'control-flow-excluded', 'value': None},
+            }
+
+        root_property_start = match.start()
+        next_lines = input_string[root_property_start:].split('\n')
+        yaml_lines = [next_lines.pop(0)]  # First line with root property
+
+        # Collect indented lines
+        while next_lines and (next_lines[0].startswith(' ') or next_lines[0].startswith('\t') or next_lines[0] == ''):
+            yaml_lines.append(next_lines.pop(0))
+
+        potential_yaml = '\n'.join(yaml_lines)
+
+        # Parse YAML
+        try:
+            yaml_object = yaml.safe_load(potential_yaml)
+        except yaml.YAMLError:
+            return {
+                'noMatch': {'type': 'string', 'value': potential_yaml},
+                'output': {'type': 'control-flow-excluded', 'value': None},
+                'matches': {'type': 'control-flow-excluded', 'value': None},
+            }
+
+        if not isinstance(yaml_object, dict) or root_property_name not in yaml_object:
+            return {
+                'noMatch': {'type': 'string', 'value': potential_yaml},
+                'output': {'type': 'control-flow-excluded', 'value': None},
+                'matches': {'type': 'control-flow-excluded', 'value': None},
+            }
+
+        matches = []
+        result_object = yaml_object
+
+        # Apply JSONPath if specified
+        if object_path:
+            try:
+                jsonpath_expr = jsonpath_parse(object_path.strip())
+                matched_values = [match.value for match in jsonpath_expr.find(yaml_object)]
+                matches = matched_values
+                result_object = matched_values[0] if matched_values else None
+            except Exception:
+                return {
+                    'noMatch': {'type': 'string', 'value': potential_yaml},
+                    'output': {'type': 'control-flow-excluded', 'value': None},
+                    'matches': {'type': 'control-flow-excluded', 'value': None},
+                }
+
+        return {
+            'output': {
+                'type': 'control-flow-excluded' if result_object is None else ('any' if object_path else 'object'),
+                'value': result_object,
+            },
+            'noMatch': {'type': 'control-flow-excluded', 'value': None},
+            'matches': {'type': 'any[]', 'value': matches},
+        }

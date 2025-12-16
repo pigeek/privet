@@ -1,0 +1,65 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: MCP Tool Call
+      nodes:
+        '[n1]:graphInput "Tool Name"':
+          data:
+            id: toolName
+            dataType: string
+          outgoingConnections:
+            - data->"Tool Call" n5/toolName
+        '[n2]:graphInput "Tool Args"':
+          data:
+            id: toolArguments
+            dataType: object
+          outgoingConnections:
+            - data->"Tool Call" n5/toolArguments
+        '[n3]:graphInput "Tool Call ID"':
+          data:
+            id: toolCallId
+            dataType: string
+          outgoingConnections:
+            - data->"Tool Call" n5/toolCallId
+        '[n4]:graphInput "Server URL"':
+          data:
+            id: serverUrl
+            dataType: string
+          outgoingConnections:
+            - data->"Tool Call" n5/serverUrl
+        '[n8]:graphInput "Name"':
+          data:
+            id: name
+            dataType: string
+          outgoingConnections:
+            - data->"Tool Call" n5/name
+        '[n9]:graphInput "Version"':
+          data:
+            id: version
+            dataType: string
+          outgoingConnections:
+            - data->"Tool Call" n5/version
+        '[n5]:mcpToolCall "Tool Call"':
+          data:
+            useToolNameInput: true
+            useToolArgumentsInput: true
+            useToolCallIdInput: true
+            useServerUrlInput: true
+            transportType: http
+            useNameInput: true
+            useVersionInput: true
+          outgoingConnections:
+            - response->"Response" n6/value
+            - toolCallId->"Tool Call ID" n7/value
+        '[n6]:graphOutput "Response"':
+          data:
+            id: response
+            dataType: object
+        '[n7]:graphOutput "Tool Call ID"':
+          data:
+            id: toolCallIdOut
+            dataType: string
+      connections: {}

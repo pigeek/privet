@@ -52,4 +52,24 @@ class CreateDatasetSchema(NodeSchema):
 @bindschema(schema=CreateDatasetSchema)
 class CreateDatasetNode(BaseNode):
     async def process(self, inputs: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        return await super().process(inputs)
+        inputs = inputs or {}
+        data = self.node.data or {}
+
+        dataset_id = inputs.get("datasetId") or data.get("datasetId")
+        dataset_name = inputs.get("datasetName") or data.get("datasetName") or dataset_id
+
+        if isinstance(dataset_id, dict):
+            dataset_id = dataset_id.get("value")
+        dataset_id = str(dataset_id or "")
+        if isinstance(dataset_name, dict):
+            dataset_name = dataset_name.get("value")
+
+        datasets = (self.context or {}).setdefault("datasets", {})
+        ds = datasets.get(dataset_id)
+        if not ds:
+            ds = {"id": dataset_id, "name": dataset_name, "rows": []}
+            datasets[dataset_id] = ds
+        else:
+            ds.setdefault("name", dataset_name)
+
+        return {"datasetId_out": {"type": "string", "value": dataset_id}}

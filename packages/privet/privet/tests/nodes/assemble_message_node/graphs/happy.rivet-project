@@ -1,0 +1,27 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Assemble Message
+      nodes:
+        '[n1]:assembleMessage "Assemble Message"':
+          data:
+            type: user
+            useTypeInput: false
+            toolCallId: ''
+            useToolCallIdInput: false
+          outgoingConnections:
+            - message->"Graph Output" n3/value
+        '[n2]:graphInput "Part1"':
+          data:
+            id: part1
+            dataType: string
+          outgoingConnections:
+            - data->"Assemble Message" n1/part1
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: chat-message
+      connections: {}

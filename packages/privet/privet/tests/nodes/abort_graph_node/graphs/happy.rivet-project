@@ -1,0 +1,22 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Abort Graph
+      nodes:
+        '[n1]:graphInput "Value"':
+          data:
+            id: msg
+            dataType: string
+            defaultValue: stop
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Abort Graph" n2/data
+        '[n2]:abortGraph "Abort Graph"':
+          data:
+            successfully: true
+            useSuccessfullyInput: false
+          outgoingConnections: []
+      connections: {}

@@ -1,0 +1,31 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: To Markdown Table
+      nodes:
+        '[n1]:graphInput "Rows"':
+          data:
+            id: rows
+            dataType: object[]
+            defaultValue:
+              - name: Alice
+                score: 10
+              - name: Bob
+                score: 8
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"To Markdown" n2/data
+        '[n2]:toMarkdownTable "To Markdown"':
+          data:
+            includeHeaders: true
+            alignPipes: false
+          outgoingConnections:
+            - markdown->"Graph Output" n3/value
+        '[n3]:graphOutput "Graph Output"':
+          data:
+            id: out
+            dataType: string
+      connections: {}

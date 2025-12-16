@@ -1,0 +1,34 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Chunk
+      nodes:
+        '[n1]:graphInput "Text"':
+          data:
+            id: text
+            dataType: string
+            defaultValue: abcdefghijklmnopqrstuvwxyz
+            useDefaultValueInput: false
+          outgoingConnections:
+            - data->"Chunk" n2/input
+        '[n2]:chunk "Chunk"':
+          data:
+            model: gpt-4o
+            useModelInput: false
+            numTokensPerChunk: 5
+            overlap: 0
+          outgoingConnections:
+            - chunks->"Chunks" n3/value
+            - count->"Count" n4/value
+        '[n3]:graphOutput "Chunks"':
+          data:
+            id: chunks
+            dataType: string[]
+        '[n4]:graphOutput "Count"':
+          data:
+            id: count
+            dataType: number
+      connections: {}

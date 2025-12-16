@@ -1,0 +1,43 @@
+version: 4
+data:
+  graphs:
+    main:
+      metadata:
+        id: main
+        name: Match
+      nodes:
+        '[n1]:graphInput "Input"':
+          data:
+            id: text
+            dataType: string
+          outgoingConnections:
+            - data->"Match" n3/input
+        '[n2]:graphInput "Val"':
+          data:
+            id: val
+            dataType: string
+          outgoingConnections:
+            - data->"Match" n3/value
+        '[n3]:match "Match"':
+          data:
+            cases:
+              - foo
+              - bar
+            exclusive: true
+          outgoingConnections:
+            - case1->"Graph Output" n4/value
+            - case2->"Graph Output" n5/value
+            - unmatched->"Graph Output" n6/value
+        '[n4]:graphOutput "Case1"':
+          data:
+            id: case1
+            dataType: any
+        '[n5]:graphOutput "Case2"':
+          data:
+            id: case2
+            dataType: any
+        '[n6]:graphOutput "Unmatched"':
+          data:
+            id: unmatched
+            dataType: any
+      connections: {}
